@@ -1,0 +1,33 @@
+{# Шаблон публичной части #}
+<!DOCTYPE html>
+<html>
+<head>
+    {% block meta %}{% endblock %}
+    <meta charset="utf-8">
+    <script type="text/javascript" src="/vendor/jquery.min.js"></script>
+    <script type="text/javascript" src="/vendor/bootstrap/js/bootstrap.js"></script>
+    {% block head %}
+        <link rel="stylesheet" href="style.css" />
+        <title>{% block title %}{% endblock %} - Sitename</title>
+        <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.css">
+        <link rel="stylesheet" href="/index.css">
+    {% endblock %}
+</head>
+<body>
+<div id="wrapper">
+
+        {% include 'nav_bar.twig' %}
+
+        <div id="content">{% block content %}{% endblock %}</div>
+    </div>
+
+    <script type="text/javascript">
+        // Выделение активной ссылки в меню
+        (function () {
+            var $link = $('[href="'+location.pathname+'"');
+            if ($link && $link.size()) $link.parent().addClass('active');
+        })();
+    </script>
+
+</body>
+</html>
