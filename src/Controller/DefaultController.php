@@ -34,6 +34,14 @@ class DefaultController extends \Nirvana\MVC\Controller
 			$className = '\\SRC\Entity\\' . pathinfo($path)['filename'];
 			$this->updateTable($className);
 		}
+
+		foreach (glob(__DIR__ . '/../modules/**/Entity/*.php') as $path) {
+			preg_match('/\\/(([A-z]+)Module)/', $path, $matches);
+			$className = '\\SRC\\' . $matches[1] . '\\Entity\\' . pathinfo($path)['filename'];
+//			var_dump($matches[1]);
+//			var_dump($className);
+			$this->updateTable($className);
+		}
 	}
 
 	/**

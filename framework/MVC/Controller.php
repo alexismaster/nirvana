@@ -12,6 +12,15 @@ namespace Nirvana\MVC;
 
 class Controller
 {
+	private $moduleName;
+
+	public function __construct($moduleName)
+	{
+		$this->moduleName = $moduleName;
+
+	}
+
+
 	/**
 	 * Рендерит шаблон
 	 *
@@ -25,10 +34,15 @@ class Controller
 		try {
 			if (is_null($path)) $path = 'src/views';
 
+			if ($this->moduleName) {
+				$path = 'src/modules/' . $this->moduleName . '/views';
+			}
+
 			// Проверка существования шаблона
 			if (!is_file($path . '/' . $name)) {
 				throw new \Exception('Template "' . $name . '" not found');
 			}
+
 			$loader = new \Twig_Loader_Filesystem($path);
 			$twig = new \Twig_Environment($loader);
 			if (isset($_SESSION)) $twig->addGlobal('session', $_SESSION);

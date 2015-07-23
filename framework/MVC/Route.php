@@ -27,6 +27,11 @@ class Route
 	protected $action;
 
 	/**
+	 * @var
+	 */
+	protected $module;
+
+	/**
 	 * Шаблон URL
 	 *
 	 * @var string
@@ -49,6 +54,10 @@ class Route
 		$this->url = $url;
 		$this->controller = (isset($options['controller'])) ? $options['controller'] : 'Default';
 		$this->action = (isset($options['action'])) ? $options['action'] : 'Index';
+
+		if (isset($options['module'])) {
+			$this->module = $options['module'];
+		}
 	}
 
 	/**
@@ -90,6 +99,9 @@ class Route
 	 */
 	public function getControllerName()
 	{
+		if ($this->module) {
+			return $this->module . 'Module\\Controller\\' . $this->controller . 'Controller';
+		}
 		return 'Controller\\' . $this->controller . 'Controller';
 	}
 
@@ -101,6 +113,15 @@ class Route
 	public function getActionName()
 	{
 		return $this->action . 'Action';
+	}
+
+	public function getModuleName()
+	{
+		if ($this->module) {
+			return $this->module . 'Module';
+		}
+
+		return false;
 	}
 
 }

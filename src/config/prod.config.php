@@ -16,5 +16,10 @@ return array(
 
 
 	// Настройки маршрутизатора
-	'ROUTER' => require('_routes_.php')
+	'ROUTER' => array_merge(
+
+		require('_routes_.php'),
+
+		require(__DIR__ . '/../modules/SampleForumModule/config/_routes_.php')
+	)
 );

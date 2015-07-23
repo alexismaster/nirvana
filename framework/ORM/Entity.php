@@ -100,14 +100,14 @@ class Entity extends ORM
 		foreach ($columnsM as $name => $properties) {
 			// Создание уникального индекса
 			if (isset($properties['Column']['unique']) && $properties['Column']['unique'] == 'true' &&
-					$columnsT[$name]['Key'] != 'UNI'
+				$columnsT[$name]['Key'] != 'UNI'
 			) {
 				$alters[] = "ALTER TABLE `{$this->getTableName()}` ADD UNIQUE INDEX `$name` (`$name`);";
 			}
 
 			// Удаление уникального индекса
 			if ($columnsT[$name]['Key'] === 'UNI' and (!isset($properties['Column']['unique']) ||
-							$properties['Column']['unique'] != 'true')
+					$properties['Column']['unique'] != 'true')
 			) {
 				$alters[] = "ALTER TABLE `{$this->getTableName()}` DROP INDEX `$name`;";
 			}
@@ -274,7 +274,32 @@ class Entity extends ORM
 	 */
 	public function getTableName()
 	{
-		return str_replace('src\\entity\\', '', strtolower($this->getClass()));
+		$name = preg_replace('/^.*\\\/', '', strtolower($this->getClass()));
+		return $this->getTablesPrefix() . $this->getModulePrefix() . $name;
+	}
+
+	/**
+	 * Префикс таблицы модуля
+	 *
+	 * @return string
+	 */
+	private function getModulePrefix()
+	{
+		preg_match('/\\\([A-z]+)Module/', $this->getClass(), $matches);
+
+		if (!isset($matches[1])) return '';
+
+		return $this->camelCase2underscore($matches[1]) . '_';
+	}
+
+	/**
+	 * Префикс всех таблиц
+	 *
+	 * @return string
+	 */
+	private function getTablesPrefix()
+	{
+		return '';
 	}
 
 

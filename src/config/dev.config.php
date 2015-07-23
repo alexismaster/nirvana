@@ -12,6 +12,7 @@ return array(
 		'MYSQL_USER' => 'root',
 		'MYSQL_PASS' => '13271327',
 		'MYSQL_BASE' => 'viliot',
+		'TABLE_PREF' => '',             // Префикс таблиц
 	),
 
 
@@ -19,6 +20,8 @@ return array(
 	'ROUTER' => array_merge(
 
 		require('_routes_.php'),
+
+		require(__DIR__ . '/../modules/SampleForumModule/config/_routes_.php'),
 
 		array(
 			'orm-update' => array('url' => '/orm-update/', 'controller' => 'Default', 'action' => 'orm'),

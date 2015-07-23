@@ -69,6 +69,7 @@ class Application
 		return self::$_instance;
 	}
 
+
 	/**
 	 * Вызов экшена
 	 *
@@ -78,10 +79,10 @@ class Application
 	 * @return mixed
 	 * @throws \Exception
 	 */
-	public function callAction($controllerName, $actionName, $params)
+	public function callAction($controllerName, $actionName, $moduleName, $params)
 	{
 		$controllerName = "\\SRC\\$controllerName";
-		$module = new $controllerName();
+		$module = new $controllerName($moduleName);
 
 		// Запуск экшена
 		if (method_exists($module, $actionName)) {
@@ -157,6 +158,8 @@ class Application
 		return $adapter;
 	}
 
+	private $router;
+
 	/**
 	 * Запуск приложения
 	 *
@@ -183,25 +186,34 @@ class Application
 				return;
 			});
 
-			$router = new MVC\Router();    // Маршрутизатор
-
-			// Настойки маршрутизатора (список роутов)
-			foreach ($this->config['ROUTER'] as $name => $route) {
-				$router->addRoute($name, new MVC\Route($route['url'],
-					array('controller' => $route['controller'], 'action' => $route['action'])));
-			}
-
-			$route = $router->getRoute();  // Маршрут соответствующий текущему URL
+			$route = $this->initRouter()->getRoute();  // Маршрут соответствующий текущему URL
 
 			if (!$route) {
 				throw new \Exception('Страница не найдена', 404);
 			}
 
 			// Запуск экшена
-			$this->callAction($route->getControllerName(), $route->getActionName(), $route->getParams());
+			$this->callAction($route->getControllerName(), $route->getActionName(), $route->getModuleName(), $route->getParams());
 		} catch (\Exception $error) {
 			// Страница 404-й ошибки
-			$this->callAction('Controller\\DefaultController', 'NotFoundAction', array('error' => $error));
+			$this->callAction('Controller\\DefaultController', 'NotFoundAction', false, array('error' => $error));
 		}
+	}
+
+	/**
+	 * Инициализация роутера
+	 *
+	 * @return Router
+	 */
+	public function initRouter()
+	{
+		$this->router = new MVC\Router();
+
+		// Маршруты основного приложения и модулей
+		foreach ($this->config['ROUTER'] as $name => $route) {
+			$this->router->addRoute($name,  new MVC\Route($route['url'], $route));
+		}
+
+		return $this->router;
 	}
 }
