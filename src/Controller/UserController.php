@@ -2,15 +2,19 @@
 /**
  * Констроллер пользователей
  *
- * @category   App
+ * @category   Application
  * @package    Controllers
  * @author     Alexey Jukov <alexismaster@yandex.ru>
  */
 
 namespace SRC\Controller;
 
+use \Nirvana\MVC as MVC;
+use \Nirvana\Validator as Validator;
+use \SRC\Entity as Entity;
 
-class UserController extends \Nirvana\MVC\Controller
+
+class UserController extends MVC\Controller
 {
 	/**
 	 * Регистрация
@@ -23,12 +27,12 @@ class UserController extends \Nirvana\MVC\Controller
 		if ($this->isRequestMethod('POST')) {
 
 			// Валидация
-			if (!\App\Validator::isEmail($_POST['email'])) $errors['email'] = "Не корректный адрес электронной почты";
+			if (!Validator\Validator::isEmail($_POST['email'])) $errors['email'] = "Не корректный адрес электронной почты";
 			if (strlen($_POST['password']) < 3) $errors['password'] = "Слишком короткий пароль";
 			if ($_POST['password'] !== $_POST['password_confirm']) $errors['password_confirm'] = "Пароли не совпадают";
 
 			if (!count($errors)) {
-				$user = new \Entity\User();
+				$user = new Entity\User();
 				$user->setEmail($_POST['email']);
 				$user->setPassword(md5($_POST['password']));
 				$user->setUsername(preg_replace('/@.*$/i', '', $_POST['email']));

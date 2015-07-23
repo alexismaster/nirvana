@@ -1,9 +1,17 @@
 <?php
 /**
- * Application
+ * Nirvana Framework
+ *
+ * @category   Nirvana
+ * @package    MVC
+ * @author     Alexey Jukov <alexismaster@yandex.ru>
  */
 
+
 namespace Nirvana\MVC;
+
+use \Nirvana\MVC as MVC;
+use \Nirvana\ORM as ORM;
 
 
 class Application
@@ -17,22 +25,31 @@ class Application
 	protected static $_instance;
 
 	/**
+	 * Флаг режима отладки
+	 *
 	 * @var
 	 */
-	private $env;
+	private $debug;
+
+	/**
+	 * Настройки
+	 *
+	 * @var
+	 */
+	private $config;
 
 	/**
 	 * Конструктор
 	 *
-	 * @param $env - Окружение
+	 * @param $config - Настройки
 	 */
-	private function __construct($env)
+	private function __construct($config)
 	{
-		$this->env = $env;
+		$this->config = $config;
 	}
 
 	/**
-	 * disable __clone
+	 * Закрытие доступа к __clone
 	 */
 	private function __clone()
 	{
@@ -41,20 +58,22 @@ class Application
 	/**
 	 * Возвращает экземпляр класса
 	 *
-	 * @param $env - Тип окрудения (dev,prod,...)
+	 * @param $config array - Настройки
 	 * @return Application - Экземпляр класса
 	 */
-	public static function init($env)
+	public static function init($config)
 	{
 		if (null === self::$_instance) {
-			self::$_instance = new self($env);
+			self::$_instance = new self($config);
 		}
 		return self::$_instance;
 	}
 
 	/**
-	 * @param $controllerName - Имя контроллера
-	 * @param $actionName - Имя экшена
+	 * Вызов экшена
+	 *
+	 * @param $controllerName string - Имя контроллера
+	 * @param $actionName string - Имя экшена
 	 * @param $params - Параметры
 	 * @return mixed
 	 * @throws \Exception
@@ -115,12 +134,15 @@ class Application
 	/**
 	 * Возвращает настройки подключения к БД
 	 *
-	 * @return mixed
+	 * @return array
 	 */
 	private static function getMySQLConfigs()
 	{
-		$configs = include_once 'src/config/db.php';
-		if (self::$_instance) return $configs[self::$_instance->env];
+		if (self::$_instance) {
+			return self::$_instance->config['DB'];
+		}
+
+		return array();
 	}
 
 	/**
@@ -131,32 +153,55 @@ class Application
 	public static function getAdapter()
 	{
 		$configs = self::getMySQLConfigs();
-		$adapter = \Nirvana\ORM\Adapter::getInstance($configs);
+		$adapter = ORM\Adapter::getInstance($configs);
 		return $adapter;
 	}
 
 	/**
-	 * @param $env
+	 * Запуск приложения
+	 *
+	 * @param $debug - Режим отладки
 	 * @throws \Exception
 	 */
-	public function run($env)
+	public function run($debug)
 	{
-		$this->env = $env;
+		$this->debug = $debug;
 
 		try {
-			$router = new \Nirvana\MVC\Router();    // Маршрутизатор
-			include_once 'src/config/routes.php';   // Настойки маршрутизатора (список роутов)
-			$route = $router->getRoute();           // Маршрут соответствующий текущему URL
+			// В режиме отладки показываем все ошибки
+			if ($debug) {
+				error_reporting(E_ALL);
+				ini_set('display_errors', 1);
+			}
+
+			session_start();
+			session_name('nirvana');
+
+			// Перехват исключений
+			set_error_handler(function ($severity, $message, $filename, $lineNo) {
+				echo $message;
+				return;
+			});
+
+			$router = new MVC\Router();    // Маршрутизатор
+
+			// Настойки маршрутизатора (список роутов)
+			foreach ($this->config['ROUTER'] as $name => $route) {
+				$router->addRoute($name, new MVC\Route($route['url'],
+					array('controller' => $route['controller'], 'action' => $route['action'])));
+			}
+
+			$route = $router->getRoute();  // Маршрут соответствующий текущему URL
 
 			if (!$route) {
-				throw new Exception('Страница не найдена', 404);
+				throw new \Exception('Страница не найдена', 404);
 			}
 
 			// Запуск экшена
 			$this->callAction($route->getControllerName(), $route->getActionName(), $route->getParams());
-		} catch (Exception $error) {
+		} catch (\Exception $error) {
 			// Страница 404-й ошибки
-			$this->callAction('SRC\\Controller\\DefaultController', 'NotFoundAction', array('error' => $error));
+			$this->callAction('Controller\\DefaultController', 'NotFoundAction', array('error' => $error));
 		}
 	}
 }

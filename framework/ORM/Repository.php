@@ -2,12 +2,14 @@
 /**
  * Repository
  *
- * @category   Framework
+ * @category   Nirvana
  * @package    ORM
  * @author     Alexey Jukov <alexismaster@yandex.ru>
  */
 
 namespace Nirvana\ORM;
+
+use \Nirvana\MVC as MVC;
 
 
 class Repository extends ORM
@@ -63,7 +65,7 @@ class Repository extends ORM
 		}
 
 		$where = implode(' AND ', $values);
-		$adapter = \Nirvana\MVC\Application::getAdapter();
+		$adapter = MVC\Application::getAdapter();
 		$result = $adapter->query("SELECT * FROM `$table` WHERE $where;");
 
 		if ($result && mysql_num_rows($result)) {
@@ -81,7 +83,7 @@ class Repository extends ORM
 		$where = $this->getWhere($values);
 		$query = "DELETE FROM `{$table}` WHERE {$where};";
 
-		$result = \Nirvana\MVC\Application::getAdapter()->query($query);
+		$result = MVC\Application::getAdapter()->query($query);
 		return $result;
 	}
 
@@ -104,7 +106,7 @@ class Repository extends ORM
 	 */
 	public function findBySql($sql)
 	{
-		$adapter = \Nirvana\MVC\Application::getAdapter();
+		$adapter = MVC\Application::getAdapter();
 		$result = $adapter->query($sql);
 
 		if ($result && mysql_num_rows($result)) {

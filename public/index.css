@@ -11,6 +11,8 @@
     font-weight: bold;
 }
 
+
+/* Посты */
 .post {
     margin-bottom: 50px;
 }
@@ -34,7 +36,7 @@
         box-shadow: inset 0 1px 0 #fff;
         background-image: -webkit-linear-gradient(top, #eee, #e1e1e1);
         background-repeat: repeat-x;
-        border: 1px solid #d9d8d8;
+        /*border: 1px solid #d9d8d8;*/
         border-color: #d9d8d8 #cccbcb #aeaeae;
         transition-duration: 0.2s;
         -webkit-user-select: none;
@@ -55,25 +57,24 @@
     }
 
 
-.comment {
-    padding-bottom: 10px;
-}
 
+/* Комментарии */
 .comments ul {
     list-style: none;
 }
 
-.comments>ul {
-    padding-left: 0;
-}
+    .comments>ul {
+        padding-left: 0;
+    }
 
-.comment {
-    position: relative;
-}
+    .comment {
+        padding-bottom: 10px;
+        position: relative;
+    }
 
-.permalink {
-    position: absolute;
-    right: 0;
-    top: 0;
-    font-size: 12px;
-}
+    .comment .permalink {
+        position: absolute;
+        right: 0;
+        top: 0;
+        font-size: 12px;
+    }

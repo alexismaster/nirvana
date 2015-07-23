@@ -2,12 +2,16 @@
 /**
  * Контроллер комментариеев
  *
- * @category   App
+ * @category   Application
  * @package    Controllers
  * @author     Alexey Jukov <alexismaster@yandex.ru>
  */
 
 namespace SRC\Controller;
+
+
+use \Nirvana\MVC as MVC;
+use \SRC\Entity as Entity;
 
 
 class CommentController extends \Nirvana\MVC\Controller
@@ -22,7 +26,7 @@ class CommentController extends \Nirvana\MVC\Controller
 
 		// Отправлена форма && пользователь авторизован
 		if ($this->isRequestMethod('POST') and isset($_SESSION['user'])) {
-			$comment = new \Entity\Comment();
+			$comment = new Entity\Comment();
 			$comment->setComment(mysql_real_escape_string($_POST['comment']));
 			$comment->setParentId($_POST['parent']);
 			$comment->setUserId(unserialize($_SESSION['user'])->id);
@@ -46,7 +50,7 @@ class CommentController extends \Nirvana\MVC\Controller
 	public function deleteAction($id)
 	{
 		$id = (int)$id;
-		$adapter = \App\Application::getAdapter();
+		$adapter = MVC\Application::getAdapter();
 		$result = $adapter->fetchOne("SELECT count(*) as `count` FROM `comment` WHERE `parent_id` = {$id}");
 
 		if ($result and (int)$result['count'] > 0) {

@@ -2,7 +2,7 @@
 /**
  * Контроллер постов
  *
- * @category   App
+ * @category   Application
  * @package    Controllers
  * @author     Alexey Jukov <alexismaster@yandex.ru>
  */
@@ -139,7 +139,7 @@ class PostController extends \Nirvana\MVC\Controller
 			if (mb_strlen(strip_tags($_POST['body']), 'utf8') < 15) $errors['body'] = 'Слишком короткий пост (меньше 15 символов)';
 
 			if (!count($errors)) {
-				$post = new \Entity\Post();
+				$post = new \SRC\Entity\Post();
 				$post->setTitle(mysql_real_escape_string($_POST['title']));
 				$post->setBody(mysql_real_escape_string($_POST['body']));
 				$post->setUserId(unserialize($_SESSION['user'])->id);

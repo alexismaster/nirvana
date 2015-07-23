@@ -2,8 +2,8 @@
 /**
  * Базовый класс констроллеров
  *
- * @category   Framework
- * @package    App
+ * @category   Nirvana
+ * @package    MVC
  * @author     Alexey Jukov <alexismaster@yandex.ru>
  */
 
@@ -31,7 +31,7 @@ class Controller
 			}
 			$loader = new \Twig_Loader_Filesystem($path);
 			$twig = new \Twig_Environment($loader);
-			$twig->addGlobal('session', $_SESSION);
+			if (isset($_SESSION)) $twig->addGlobal('session', $_SESSION);
 
 			// Десериализация
 			$filter = new \Twig_SimpleFilter('unserialize', 'unserialize');

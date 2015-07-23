@@ -2,8 +2,8 @@
 /**
  * Router
  *
- * @category   Framework
- * @package    App
+ * @category   Nirvana
+ * @package    MVC
  * @author     Alexey Jukov <alexismaster@yandex.ru>
  */
 

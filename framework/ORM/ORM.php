@@ -2,7 +2,7 @@
 /**
  * Базовый класс для всех классов ORM
  *
- * @category   Framework
+ * @category   Nirvana
  * @package    ORM
  * @author     Alexey Jukov <alexismaster@yandex.ru>
  */
