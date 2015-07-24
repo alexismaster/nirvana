@@ -11,7 +11,7 @@ namespace SRC\Controller;
 
 
 use \Nirvana\MVC as MVC;
-use \SRC\Entity as Entity;
+use \Src\Entity as Entity;
 
 
 class CommentController extends MVC\Controller

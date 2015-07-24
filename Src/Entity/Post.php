@@ -3,7 +3,7 @@
  * Пост
  */
 
-namespace SRC\Entity;
+namespace Src\Entity;
 
 
 class Post extends \Nirvana\ORM\Entity

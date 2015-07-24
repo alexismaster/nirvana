@@ -7,7 +7,7 @@
  * @author     Alexey Jukov <alexismaster@yandex.ru>
  */
 
-namespace SRC\Entity;
+namespace Src\Entity;
 
 
 class Comment extends \Nirvana\ORM\Entity

@@ -3,7 +3,7 @@
  * Пользователь
  */
 
-namespace SRC\Entity;
+namespace Src\Entity;
 
 
 class User extends \Nirvana\ORM\Entity
