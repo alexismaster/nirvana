@@ -285,7 +285,7 @@ class Entity extends ORM
 	 */
 	private function getModulePrefix()
 	{
-		preg_match('/\\\([A-z]+)Module/', $this->getClass(), $matches);
+		preg_match('/([^\\\]+)Module/', $this->getClass(), $matches);
 
 		if (!isset($matches[1])) return '';
 

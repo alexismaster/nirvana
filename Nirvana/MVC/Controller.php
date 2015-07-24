@@ -32,10 +32,10 @@ class Controller
 	public function render($name, $data = array(), $path = null)
 	{
 		try {
-			if (is_null($path)) $path = 'src/views';
+			if (is_null($path)) $path = 'Src/views';
 
 			if ($this->moduleName) {
-				$path = 'src/modules/' . $this->moduleName . '/views';
+				$path = 'Src/Module/' . $this->moduleName . '/views';
 			}
 
 			// Проверка существования шаблона

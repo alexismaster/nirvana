@@ -8,7 +8,7 @@
  */
 
 
-namespace SRC\SampleForumModule\Controller;
+namespace SRC\Module\SampleForumModule\Controller;
 
 use \Nirvana\MVC as MVC;
 

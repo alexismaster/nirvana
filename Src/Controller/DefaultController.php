@@ -9,8 +9,9 @@
 
 namespace SRC\Controller;
 
+use \Nirvana\MVC as MVC;
 
-class DefaultController extends \Nirvana\MVC\Controller
+class DefaultController extends MVC\Controller
 {
 	/**
 	 * Установка/обновление таблиц БД
@@ -31,13 +32,13 @@ class DefaultController extends \Nirvana\MVC\Controller
 	private function updateTables()
 	{
 		foreach (glob(__DIR__ . '/../Entity/*.php') as $path) {
-			$className = '\\SRC\Entity\\' . pathinfo($path)['filename'];
+			$className = '\\Src\Entity\\' . pathinfo($path)['filename'];
 			$this->updateTable($className);
 		}
 
-		foreach (glob(__DIR__ . '/../modules/**/Entity/*.php') as $path) {
+		foreach (glob(__DIR__ . '/../Module/**/Entity/*.php') as $path) {
 			preg_match('/\\/(([A-z]+)Module)/', $path, $matches);
-			$className = '\\SRC\\' . $matches[1] . '\\Entity\\' . pathinfo($path)['filename'];
+			$className = '\\Src\\Module\\' . $matches[1] . '\\Entity\\' . pathinfo($path)['filename'];
 //			var_dump($matches[1]);
 //			var_dump($className);
 			$this->updateTable($className);

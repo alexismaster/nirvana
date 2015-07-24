@@ -125,7 +125,7 @@ class Repository extends ORM
 	public function mapResult($result)
 	{
 		$resArr = array();
-		$classN = "\\SRC\\Entity\\$this->entityClassName";
+		$classN = "\\Src\\Entity\\$this->entityClassName";
 
 		while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 			$entity = new $classN();

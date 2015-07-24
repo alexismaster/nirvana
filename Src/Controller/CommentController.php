@@ -14,7 +14,7 @@ use \Nirvana\MVC as MVC;
 use \SRC\Entity as Entity;
 
 
-class CommentController extends \Nirvana\MVC\Controller
+class CommentController extends MVC\Controller
 {
 	/**
 	 * Создание комментария

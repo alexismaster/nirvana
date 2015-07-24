@@ -20,6 +20,6 @@ return array(
 
 		require('_routes_.php'),
 
-		require(__DIR__ . '/../modules/SampleForumModule/config/_routes_.php')
+		require(__DIR__ . '/../Module/SampleForumModule/config/_routes_.php')
 	)
 );

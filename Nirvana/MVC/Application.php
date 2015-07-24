@@ -81,7 +81,15 @@ class Application
 	 */
 	public function callAction($controllerName, $actionName, $moduleName, $params)
 	{
-		$controllerName = "\\SRC\\$controllerName";
+
+
+		if ($moduleName) {
+			$controllerName = "\\Src\\Module\\$controllerName";
+		}
+		else {
+			$controllerName = "\\Src\\$controllerName";
+		}
+
 		$module = new $controllerName($moduleName);
 
 		// Запуск экшена

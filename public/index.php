@@ -27,4 +27,4 @@ $debugMode = true;
 
 
 // Запуск приложения
-Nirvana\MVC\Application::init(require 'src/config/dev.config.php')->run($debugMode);
+Nirvana\MVC\Application::init(require 'Src/config/dev.config.php')->run($debugMode);

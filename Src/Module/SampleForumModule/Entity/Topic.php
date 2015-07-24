@@ -1,7 +1,7 @@
 <?php
 
 
-namespace SRC\SampleForumModule\Entity;
+namespace Src\Module\SampleForumModule\Entity;
 
 use \Nirvana\ORM as ORM;
 

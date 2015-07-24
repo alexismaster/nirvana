@@ -7,10 +7,12 @@
  * @author     Alexey Jukov <alexismaster@yandex.ru>
  */
 
-namespace SRC\Controller;
+namespace Src\Controller;
+
+use \Nirvana\MVC as MVC;
 
 
-class PostController extends \Nirvana\MVC\Controller
+class PostController extends MVC\Controller
 {
 	/**
 	 * Список постов
