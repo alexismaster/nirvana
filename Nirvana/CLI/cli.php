@@ -1,4 +1,7 @@
 <?php
+/**
+ * 
+ */
 
 // Корень проекта
 chdir(dirname(dirname(__DIR__)));
