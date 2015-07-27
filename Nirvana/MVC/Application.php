@@ -180,7 +180,7 @@ class Application
 
 		try {
 			// В режиме отладки показываем все ошибки
-			if ($debug) {
+			if ($this->debug) { //Используем или не создаем
 				error_reporting(E_ALL);
 				ini_set('display_errors', 1);
 			}
