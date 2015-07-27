@@ -38,9 +38,9 @@ class Command
 	/**
 	 * Создаёт файл по шаблону
 	 *
-	 * @param $path
-	 * @param $templateName
-	 * @param $params
+	 * @param $path - Путь с коздаваемому файлу
+	 * @param $templateName - Имя шаблона
+	 * @param $params - Параметры шаблона
 	 */
 	public function createFile($path, $templateName, $params)
 	{
