@@ -1,0 +1,8 @@
+{% extends "index.twig" %}
+
+{% block title %}ORM update{% endblock %}
+
+{% block content %}
+    <h2>ORM update (лог выполняемых операций):</h2>
+    <pre>{% if content|length < 1 %}Нет различий между классами моделей и БД{% endif %}{{ content | raw }}</pre>
+{% endblock %}

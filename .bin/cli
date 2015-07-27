@@ -1,0 +1,9 @@
+#!/bin/bash
+
+#
+# PATH=/home/alexismaster/www/nirvana/.bin:$PATH
+#
+#
+
+php "./Nirvana/CLI/cli.php" $1 $2 $3 $4 $5;
+
