@@ -9,17 +9,27 @@
 
 namespace Nirvana\MVC;
 
+use \Nirvana\ORM as ORM;
+
 
 class Controller
 {
+	/**
+	 * Имя модуля к которому относится контроллер
+	 *
+	 * @var
+	 */
 	private $moduleName;
 
-	public function __construct($moduleName)
+	/**
+	 * Конструктор
+	 *
+	 * @param $moduleName - Имя модуля
+	 */
+	public function __construct($moduleName = false)
 	{
 		$this->moduleName = $moduleName;
-
 	}
-
 
 	/**
 	 * Рендерит шаблон
@@ -85,10 +95,21 @@ class Controller
 	 * Возвращает экземпляр класса Repository для конкретного типа сущности
 	 *
 	 * @param $entityClassName - Имя класса сущности
-	 * @return \Nirvana\ORM\Repository
+	 * @return ORM\Repository
 	 */
 	public function getRepository($entityClassName)
 	{
-		return new \Nirvana\ORM\Repository($entityClassName);
+		return new ORM\Repository($entityClassName);
+	}
+
+	/**
+	 * Возвращает адаптер к БД
+	 *
+	 * @return ORM\Adapter
+	 */
+	public function getAdapter()
+	{
+		$adapter = Application::getAdapter();
+		return $adapter;
 	}
 }

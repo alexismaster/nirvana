@@ -58,11 +58,9 @@ class PostController extends MVC\Controller
 		$repository = $this->getRepository('User');
 		$user = $repository->findById($post[0]->user_id);
 
-		// Комментарии
-		//$post->getChild('');
-
+		/*// Комментарии (старый способ запроса)
 		$repository = $this->getRepository('Comment');
-		$comments = $repository->findBySql("
+		$comments = $repository->findBySql('
             SELECT
               comment.*, user.username
             FROM
@@ -72,8 +70,11 @@ class PostController extends MVC\Controller
             ON
               user.id = comment.user_id
             WHERE
-              topic_id = {$post[0]->id}
-        ");
+              topic_id = :topic_id
+        ', array('topic_id' => $post[0]->id));*/
+
+		$comments = $post[0]->getComments(); // Получение комментариев с помощью связей
+		//var_dump($comments[0]);
 
 		$count = count($comments);
 		$tree = ($count) ? $this->tree($comments, 0) : array(); // Дерево комментариев

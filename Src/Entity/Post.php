@@ -5,8 +5,10 @@
 
 namespace Src\Entity;
 
+use \Nirvana\ORM as ORM;
 
-class Post extends \Nirvana\ORM\Entity
+
+class Post extends ORM\Entity
 {
 
 	/**
@@ -31,7 +33,21 @@ class Post extends \Nirvana\ORM\Entity
 	 */
 	public $user_id;
 
+	/**
+	 * getComments()
+	 *
+	 * При вызове этого метода произойд]т следующее:
+	 * -
+	 * - К таблице комментариев будут добавлены поля из таблицы пользователей
+	 *
+	 * @ORM\OneToMany(targetEntity="Comment", mappedBy="topic_id")
+	 * @ORM\JoinTable(name="user", columns="username,email")
+	 */
+	protected $comments;
 
+	/**
+	 * afterUpdate
+	 */
 	public function afterUpdate()
 	{
 		//....

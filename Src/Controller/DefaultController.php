@@ -10,6 +10,7 @@
 namespace SRC\Controller;
 
 use \Nirvana\MVC as MVC;
+use \Nirvana\ORM as ORM;
 
 class DefaultController extends MVC\Controller
 {
@@ -27,40 +28,11 @@ class DefaultController extends MVC\Controller
 	}
 
 	/**
-	 * Создаёт экземпляры всех имеющихся сущностей и вызывает для них метод "updateTable"
+	 * Обновление таблиц в соответствии с моделями (Entity)
 	 */
 	private function updateTables()
 	{
-		foreach (glob(__DIR__ . '/../Entity/*.php') as $path) {
-			$className = '\\Src\Entity\\' . pathinfo($path)['filename'];
-			$this->updateTable($className);
-		}
-
-		foreach (glob(__DIR__ . '/../Module/**/Entity/*.php') as $path) {
-			preg_match('/\\/(([A-z]+)Module)/', $path, $matches);
-			$className = '\\Src\\Module\\' . $matches[1] . '\\Entity\\' . pathinfo($path)['filename'];
-//			var_dump($matches[1]);
-//			var_dump($className);
-			$this->updateTable($className);
-		}
-	}
-
-	/**
-	 * @param $className
-	 */
-	private function updateTable($className)
-	{
-		if (!class_exists($className, true)) {
-			echo "<h4 style='color: #8b0000;'>Ошибка: Класс $className не определён</h4>";
-			return;
-		}
-
-		try {
-			$entity = new $className();
-			$entity->updateTable();
-		} catch (\Exception $error) {
-			//
-		}
+		ORM\ORM::updateTables();
 	}
 
 	/**

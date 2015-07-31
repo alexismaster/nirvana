@@ -23,7 +23,8 @@ class Router implements \Countable
 	 * Добавление маршрута
 	 *
 	 * @param $name - Имя маршрута
-	 * @param $route
+	 * @param Route $route
+	 * @throws \Exception
 	 */
 	public function addRoute($name, Route $route)
 	{

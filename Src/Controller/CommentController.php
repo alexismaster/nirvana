@@ -49,11 +49,11 @@ class CommentController extends MVC\Controller
 	 */
 	public function deleteAction($id)
 	{
-		$id = (int)$id;
-		$adapter = MVC\Application::getAdapter();
-		$result = $adapter->fetchOne("SELECT count(*) as `count` FROM `comment` WHERE `parent_id` = {$id}");
+		$id     = (int)$id;
+		$query  = 'SELECT count(*) as cnt FROM comment WHERE parent_id = :id;';
+		$result = $this->getAdapter()->fetchOne($query, array('id' => $id));
 
-		if ($result and (int)$result['count'] > 0) {
+		if ($result and (int)$result['cnt'] > 0) {
 			$this->render('comment/delete.twig', array('success' => false, 'url' => $_SERVER['HTTP_REFERER']));
 		} else {
 			$repository = $this->getRepository('Comment');
