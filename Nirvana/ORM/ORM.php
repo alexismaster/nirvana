@@ -42,4 +42,42 @@ class ORM
 		$result  = $adapter->query($sql, $params);
 		return $result;
 	}
+
+	/**
+	 * Обновляет таблицы БД
+	 */
+	public static function updateTables()
+	{
+		foreach (glob('Src/Entity/*.php') as $path) {
+			$className = '\\Src\Entity\\' . pathinfo($path)['filename'];
+			self::_updateTable($className);
+		}
+
+		foreach (glob('Src/Module/**/Entity/*.php') as $path) {
+			preg_match('/\\/(([A-z]+)Module)/', $path, $matches);
+			$className = '\\Src\\Module\\' . $matches[1] . '\\Entity\\' . pathinfo($path)['filename'];
+			self::_updateTable($className);
+		}
+	}
+
+	/**
+	 * _updateTable
+	 *
+	 * @param $className
+	 * @throws \Exception
+	 */
+	private static function _updateTable($className)
+	{
+		if (!class_exists($className, true)) {
+			echo "<h4 style='color: #8b0000;'>Ошибка: Класс $className не определён</h4>";
+			return;
+		}
+
+		try {
+			$entity = new $className();
+			$entity->updateTable();
+		} catch (\Exception $error) {
+			throw new \Exception('Не удалось обновить таблицу');
+		}
+	}
 }

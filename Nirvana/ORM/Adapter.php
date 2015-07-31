@@ -111,6 +111,14 @@ class Adapter
 	}
 
 	/**
+	 * @return array
+	 */
+	public function errorInfo()
+	{
+		return $this->pdo->errorInfo();
+	}
+
+	/**
 	 * Возвращает экземпляр класса
 	 *
 	 * @param $config - Настройки подключения к БД
@@ -130,9 +138,9 @@ class Adapter
 	 * @param $sql - Это должен быть корректный запрос с точки зрения целевой СУБД.
 	 * @return array
 	 */
-	public function fetchOne($sql)
+	public function fetchOne($sql, $params = array())
 	{
-		$result = $this->query($sql);
+		$result = $this->query($sql, $params);
 
 		if ($result && $result->rowCount()) {
 			return $result->fetch(\PDO::FETCH_ASSOC);

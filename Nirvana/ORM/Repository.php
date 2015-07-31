@@ -113,11 +113,12 @@ class Repository extends ORM
 	 * findBySql
 	 *
 	 * @param $sql
-	 * @return array
+	 * @param array $params
+	 * @return array|\PDOStatement
 	 */
-	public function findBySql($sql)
+	public function findBySql($sql, $params = array())
 	{
-		$result = $this->query($sql);
+		$result = $this->query($sql, $params);
 
 		if ($result && $result->rowCount()) {
 			return $this->mapResult($result);

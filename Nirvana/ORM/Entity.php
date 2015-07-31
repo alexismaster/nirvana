@@ -10,6 +10,7 @@
 namespace Nirvana\ORM;
 
 use \Nirvana\MVC\Application as App;
+use Nirvana\MVC\Relation\RelationFactory;
 
 
 class Entity extends ORM
@@ -28,6 +29,7 @@ class Entity extends ORM
 		foreach ($rc->getProperties() as $property) {
 			$rp = new \ReflectionProperty($property->class, $property->name);
 			$parameters = $this->columnOptions($rp->getDocComment());
+			if (!isset($parameters['Column'])) continue;
 			$sql = $this->columnSQL($property->name, $parameters);
 			$columnsSQL[] = $sql;
 		}
@@ -129,7 +131,9 @@ class Entity extends ORM
 		// Комментарии свойств
 		foreach ($rc->getProperties() as $property) {
 			$rp = new \ReflectionProperty($property->class, $property->name);
-			$result[$property->name] = $this->columnOptions($rp->getDocComment()); // Парсинг комментариев над свойствами
+			$options = $this->columnOptions($rp->getDocComment());
+			if (!isset($options['Column'])) continue;
+			$result[$property->name] = $options; // Парсинг комментариев над свойствами
 		}
 
 		return $result;
@@ -313,6 +317,8 @@ class Entity extends ORM
 	 *
 	 * @param $name - Имя метода
 	 * @param $arguments
+	 * @return
+	 * @throws \Exception
 	 */
 	public function __call($name, $arguments)
 	{
@@ -325,6 +331,14 @@ class Entity extends ORM
 		// Геттеры свойств
 		if (strpos($name, 'get') === 0) {
 			$column = $this->camelCase2underscore(str_replace('get', '', $name));
+			$rp     = new \ReflectionProperty($this->getClass(), $column);
+
+			// Поле является защищенным (это связи)
+			if ($rp->isProtected()) {
+				$relation = Relation\RelationFactory::factory($rp);
+				return $relation->getItems($this->id);
+			}
+
 			return $this->$column;
 		}
 	}
@@ -410,6 +424,8 @@ class Entity extends ORM
 		$table = $this->getTableName();
 		$query = "DELETE FROM `$table` WHERE `id` = {$this->id};";
 		$res = $this->query($query);
+//		$query = 'DELETE FROM :table WHERE id = :id;';
+//		$res = $this->query($query, array('table' => $table, 'id' => $this->id));
 
 		$this->afterDelete();
 
