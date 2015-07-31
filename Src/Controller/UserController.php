@@ -11,7 +11,7 @@ namespace SRC\Controller;
 
 use \Nirvana\MVC as MVC;
 use \Nirvana\Validator as Validator;
-use \SRC\Entity as Entity;
+use \Src\Entity as Entity;
 
 
 class UserController extends MVC\Controller
@@ -41,7 +41,7 @@ class UserController extends MVC\Controller
 				if ($user->save()) {
 					return $this->redirect('/sign-up_success/');
 				} else {
-					$errors['mysql'] = mysql_error();
+					//$errors['mysql'] = mysql_error();
 				}
 			}
 		}

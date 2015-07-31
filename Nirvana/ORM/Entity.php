@@ -39,7 +39,7 @@ class Entity extends ORM
 			$tableSQL = $this->tableSQL($this->getTableName(), implode(",\r\n", $columnsSQL));
 			echo $tableSQL . "\r\n---------------------------------------------------\r\n";
 
-			$res = App::getAdapter()->query($tableSQL); // Создание таблицы
+			$res = $this->query($tableSQL); // Создание таблицы
 			if (!$res) var_dump(mysql_error());
 		}
 
@@ -48,7 +48,7 @@ class Entity extends ORM
 	}
 
 	/**
-	 * modifyTable
+	 * Подстройка таблицы под модель
 	 */
 	private function modifyTable()
 	{
@@ -88,8 +88,8 @@ class Entity extends ORM
 	/**
 	 * Возвращает массив инструкций "ALTER TABLE" для создания уникальных индексов
 	 *
-	 * @param $columnsT
-	 * @param $columnsM
+	 * @param $columnsT - Данные полученные из БД (SHOW COLUMNS FROM...)
+	 * @param $columnsM - Данные полученные по модели (Парсинг комментариев)
 	 * @return array
 	 */
 	private function getAlterIndex($columnsT, $columnsM)
@@ -117,7 +117,7 @@ class Entity extends ORM
 	}
 
 	/**
-	 * Возвращает параметры для колонок таблицы основвываясьна модели
+	 * Возвращает параметры для колонок таблицы основвываясь на модели
 	 *
 	 * @return array
 	 */
@@ -143,11 +143,11 @@ class Entity extends ORM
 	public function getColumnsByTable()
 	{
 		$columns = array();
-		$res = App::getAdapter()->query('SHOW COLUMNS FROM ' . $this->getTableName());
+		$result  = $this->query('SHOW COLUMNS FROM ' . $this->getTableName());
 
-		if (!$res) return;
+		if (!$result) return;
 
-		while ($row = mysql_fetch_assoc($res)) {
+		while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
 			$columns[$row['Field']] = $row;
 		}
 
@@ -157,7 +157,7 @@ class Entity extends ORM
 	/**
 	 * Парсит комментарий к свойству
 	 *
-	 * @param $comment
+	 * @param $comment - Комментарий
 	 * @return array
 	 */
 	public function columnOptions($comment)
@@ -185,6 +185,7 @@ class Entity extends ORM
 	}
 
 	/**
+	 * Возвращает часть запроса CREATE TABLE для конкретного столбца
 	 * @param $name
 	 * @param $parameters
 	 * @return string
@@ -223,13 +224,14 @@ class Entity extends ORM
 	/**
 	 * Возвращает SQL "CREATE TABLE ..." для отражения сущности в БД
 	 *
-	 * @param $name
-	 * @param $columnsSQL
+	 * @param $name string - Название таблицы
+	 * @param $columnsSQL string - Колонки
 	 * @return string
 	 */
 	public function tableSQL($name, $columnsSQL)
 	{
-		return "CREATE TABLE `$name` (\r\n$columnsSQL\r\n) ENGINE=InnoDB;";
+		// Adapter::DEFAULT_CHARSET
+		return "CREATE TABLE `$name` (\r\n$columnsSQL\r\n) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 	}
 
 	/**
@@ -262,6 +264,8 @@ class Entity extends ORM
 	}
 
 	/**
+	 * Возвращает имя класса сущности
+	 *
 	 * @return string
 	 */
 	public function getClass()
@@ -270,6 +274,8 @@ class Entity extends ORM
 	}
 
 	/**
+	 * Возвращает имя таблицы
+	 *
 	 * @return mixed
 	 */
 	public function getTableName()
@@ -302,19 +308,24 @@ class Entity extends ORM
 		return '';
 	}
 
-
 	/**
 	 * Сеттеры свойств
 	 *
-	 * @param $name
+	 * @param $name - Имя метода
 	 * @param $arguments
 	 */
 	public function __call($name, $arguments)
 	{
-		// сеттеры свойств
-		if (preg_match('/^set/', $name)) {
+		// Сеттеры свойств
+		if (strpos($name, 'set') === 0) {
 			$column = $this->camelCase2underscore(str_replace('set', '', $name));
 			$this->$column = $arguments[0];
+		}
+
+		// Геттеры свойств
+		if (strpos($name, 'get') === 0) {
+			$column = $this->camelCase2underscore(str_replace('get', '', $name));
+			return $this->$column;
 		}
 	}
 
@@ -352,12 +363,12 @@ class Entity extends ORM
 		$values = implode(', ', $values);
 
 		$mysql = App::getAdapter();
-		$sql = "INSERT INTO `$table` ($names) VALUES($values);";
+		$sql = "INSERT INTO {$table} ($names) VALUES ($values)";
 		$res = $mysql->query($sql);
 
 		if ($res) {
 			$this->saved = true;
-			$this->id = mysql_insert_id();
+			$this->id = $mysql->lastInsertId();
 			return $this->id;
 		}
 
@@ -384,7 +395,7 @@ class Entity extends ORM
 
 		$values = implode(', ', $values);
 		$sql = "UPDATE `$table` SET $values WHERE `id` = {$this->id};";
-		$res = App::getAdapter()->query($sql);
+		$res = $this->query($sql);
 		return $res;
 	}
 
@@ -398,7 +409,7 @@ class Entity extends ORM
 
 		$table = $this->getTableName();
 		$query = "DELETE FROM `$table` WHERE `id` = {$this->id};";
-		$res = App::getAdapter()->query($query);
+		$res = $this->query($query);
 
 		$this->afterDelete();
 
@@ -438,11 +449,11 @@ class Entity extends ORM
 	 * Возвращает экземпляр класса Repository для конкретного типа сущности
 	 *
 	 * @param $entityClassName - Имя класса сущности
-	 * @return \Nirvana\ORM\Repository
+	 * @return Repository
 	 */
 	public function getRepository($entityClassName)
 	{
-		return new \Nirvana\ORM\Repository($entityClassName);
+		return new Repository($entityClassName);
 	}
 }
 

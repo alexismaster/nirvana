@@ -27,7 +27,7 @@ class CommentController extends MVC\Controller
 		// Отправлена форма && пользователь авторизован
 		if ($this->isRequestMethod('POST') and isset($_SESSION['user'])) {
 			$comment = new Entity\Comment();
-			$comment->setComment(mysql_real_escape_string($_POST['comment']));
+			$comment->setComment($_POST['comment']);
 			$comment->setParentId($_POST['parent']);
 			$comment->setUserId(unserialize($_SESSION['user'])->id);
 			$comment->setTopicId($postId);

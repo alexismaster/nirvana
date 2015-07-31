@@ -10,7 +10,7 @@
 namespace Nirvana\MVC;
 
 
-class Router
+class Router implements \Countable
 {
 	/**
 	 * Маршруты
@@ -27,6 +27,10 @@ class Router
 	 */
 	public function addRoute($name, Route $route)
 	{
+        if (isset($this->_routes[$name])) {
+            throw new \Exception("Route \"{$name}\" already exists");
+        }
+        
 		$this->_routes[$name] = $route;
 	}
 
@@ -41,4 +45,12 @@ class Router
 			return $route;
 		}
 	}
+    
+    /**
+     * Реализация интерфейса Countable
+     */
+    public function count()
+    {
+        return count($this->_routes);
+    }
 }

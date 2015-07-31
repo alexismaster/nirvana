@@ -59,6 +59,8 @@ class PostController extends MVC\Controller
 		$user = $repository->findById($post[0]->user_id);
 
 		// Комментарии
+		//$post->getChild('');
+
 		$repository = $this->getRepository('Comment');
 		$comments = $repository->findBySql("
             SELECT
@@ -141,19 +143,19 @@ class PostController extends MVC\Controller
 			if (mb_strlen(strip_tags($_POST['body']), 'utf8') < 15) $errors['body'] = 'Слишком короткий пост (меньше 15 символов)';
 
 			if (!count($errors)) {
-				$post = new \SRC\Entity\Post();
-				$post->setTitle(mysql_real_escape_string($_POST['title']));
-				$post->setBody(mysql_real_escape_string($_POST['body']));
+				$post = new \Src\Entity\Post();
+				$post->setTitle($_POST['title']);
+				$post->setBody($_POST['body']);
 				$post->setUserId(unserialize($_SESSION['user'])->id);
 
 				// Сохранение пользователя в БД
 				if ($post->save()) {
 					return $this->redirect('/post/' . $post->id);
 				} else {
-					$errors['mysql'] = mysql_error();
-					if (strpos($errors['mysql'], 'Duplicate entry') !== false) {
-						$errors['mysql'] = 'Пост с таким заголовком уже существует';
-					}
+//					$errors['mysql'] = mysql_error();
+//					if (strpos($errors['mysql'], 'Duplicate entry') !== false) {
+//						$errors['mysql'] = 'Пост с таким заголовком уже существует';
+//					}
 				}
 			}
 		}

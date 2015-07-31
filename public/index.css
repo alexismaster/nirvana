@@ -1,4 +1,8 @@
 
+html, body {
+    background: #999999;
+}
+
 
 #wrapper {
     width: 960px;

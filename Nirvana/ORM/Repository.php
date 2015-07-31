@@ -2,6 +2,8 @@
 /**
  * Repository
  *
+ * Класс рапозитория создаётся под конкретный тип сущностей (конкретную таблицу)
+ *
  * @category   Nirvana
  * @package    ORM
  * @author     Alexey Jukov <alexismaster@yandex.ru>
@@ -16,7 +18,7 @@ class Repository extends ORM
 {
 
 	/**
-	 * Имя класса сущности
+	 * Имя класса сущности (Product, User, Post и т.п.)
 	 *
 	 * @var string
 	 */
@@ -25,7 +27,7 @@ class Repository extends ORM
 	/**
 	 * Конструктор
 	 *
-	 * @param $entityClassName
+	 * @param $entityClassName - Имя класса сущности
 	 */
 	public function __construct($entityClassName)
 	{
@@ -33,83 +35,91 @@ class Repository extends ORM
 	}
 
 	/**
-	 * @param $name
-	 * @param $arguments
+	 * __call
+	 *
+	 * @param $name - Имя метода
+	 * @param $arguments - Аргументы
 	 * @return array
 	 */
 	public function __call($name, $arguments)
 	{
-		// findBy[Column]
-		if (preg_match('/findBy[a-z]+/i', $name)) {
-			$column = $this->camelCase2underscore(str_replace('findBy', '', $name));
-			return $this->findBy(array($column => $arguments[0]));
-		}
+		if (
+			strpos($name, 'findBy')   === 0 ||
+			strpos($name, 'deleteBy') === 0
+		) {
+			$by = strpos($name, 'By');
 
-		// deleteBy[Column]
-		if (preg_match('/deleteBy[a-z]+/i', $name)) {
-			$column = $this->camelCase2underscore(str_replace('deleteBy', '', $name));
-			return $this->deleteBy(array($column => $arguments[0]));
+			$method = substr($name, 0, $by + 2);
+			$column = substr($name, $by + 2);
+			$column = $this->camelCase2underscore($column);
+
+			return $this->$method(array(
+				$column => array_shift($arguments)
+			));
 		}
 	}
 
 	/**
-	 * @param $values
+	 * Выборка
+	 *
+	 * @param $values - Массив вида "поле_таблицы" => "значение"
 	 * @return array
 	 */
 	public function findBy($values)
 	{
-		$table = strtolower($this->entityClassName);
+		$result = $this->makeQuery('SELECT *', $values);
 
-		foreach ($values as $column => $value) {
-			$values[$column] = $column . "='$value'";
-		}
-
-		$where = implode(' AND ', $values);
-		$adapter = MVC\Application::getAdapter();
-		$result = $adapter->query("SELECT * FROM `$table` WHERE $where;");
-
-		if ($result && mysql_num_rows($result)) {
+		if ($result && $result->rowCount()) {
 			return $this->mapResult($result);
 		}
 	}
 
 	/**
+	 * Конструирует запрос
+	 *
+	 * @param $type - Тип запроса (строка перед FROM)
+	 * @param $values - Массив вида "колонка_таблицы" => "значение"
+	 * @param string $glue - Логический оперетор объединения условий
+	 * @return \PDOStatement
+	 */
+	private function makeQuery($type, $values, $glue = 'AND')
+	{
+		$params = array();
+		$table  = strtolower($this->entityClassName);
+
+		foreach ($values as $column => $value) {
+			$values[$column] = $column . ' = :' . $column;
+			$params[$column] = $value;
+		}
+
+		$where  = implode(' '.$glue.' ', $values);
+		$result = $this->query($type . ' FROM `'.$table.'` WHERE '.$where.';', $params);
+
+		return $result;
+	}
+
+	/**
+	 * Удаление
+	 *
 	 * @param $values
 	 * @return resource
 	 */
 	public function deleteBy($values)
 	{
-		$table = strtolower($this->entityClassName);
-		$where = $this->getWhere($values);
-		$query = "DELETE FROM `{$table}` WHERE {$where};";
-
-		$result = MVC\Application::getAdapter()->query($query);
-		return $result;
+		return $this->makeQuery('DELETE', $values);
 	}
 
 	/**
-	 * @param $values
-	 * @return string
-	 */
-	public function getWhere($values)
-	{
-		foreach ($values as $column => $value) {
-			$values[$column] = $column . "='$value'";
-		}
-
-		return implode(' AND ', $values);
-	}
-
-	/**
+	 * findBySql
+	 *
 	 * @param $sql
 	 * @return array
 	 */
 	public function findBySql($sql)
 	{
-		$adapter = MVC\Application::getAdapter();
-		$result = $adapter->query($sql);
+		$result = $this->query($sql);
 
-		if ($result && mysql_num_rows($result)) {
+		if ($result && $result->rowCount()) {
 			return $this->mapResult($result);
 		}
 
@@ -125,13 +135,13 @@ class Repository extends ORM
 	public function mapResult($result)
 	{
 		$resArr = array();
-		$classN = "\\Src\\Entity\\$this->entityClassName";
+		$classN = '\\Src\\Entity\\' . $this->entityClassName;
 
-		while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		while ($line = $result->fetch(\PDO::FETCH_ASSOC)) {
 			$entity = new $classN();
 
 			foreach ($line as $key => $value) {
-				$setter = "set" . ucfirst($key);
+				$setter = 'set' . ucfirst($key);
 				$entity->$setter($value);
 			}
 
