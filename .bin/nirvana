@@ -1,9 +1,21 @@
 #!/bin/bash
 
+# ##################################
+# # --- ГЕНЕРАТОР КОДА (Linux) --- #
+# ##################################
 #
-# PATH=/home/alexismaster/www/nirvana/.bin:$PATH
+# # Переходим в папку проекта
+# cd path/to/nirvana
 #
+# # Экспортируем путь к папке ".bin" в переменную среды $PATH
+# PATH=./.bin:$PATH
 #
+# # Теперь можно использовать генератор кода:
+# nirvana create_controller Test
+#
+# # В результате в папке Src/Controller появится новый файл TestController.php
+# # содержащий базовый код контроллера TestController
+
 
 php "./Nirvana/CLI/cli.php" $1 $2 $3 $4 $5;
 

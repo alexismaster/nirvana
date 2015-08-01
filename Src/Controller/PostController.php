@@ -10,6 +10,7 @@
 namespace Src\Controller;
 
 use \Nirvana\MVC as MVC;
+use \Src\Entity as Entity;
 
 
 class PostController extends MVC\Controller
@@ -144,7 +145,7 @@ class PostController extends MVC\Controller
 			if (mb_strlen(strip_tags($_POST['body']), 'utf8') < 15) $errors['body'] = 'Слишком короткий пост (меньше 15 символов)';
 
 			if (!count($errors)) {
-				$post = new \Src\Entity\Post();
+				$post = new Entity\Post();
 				$post->setTitle($_POST['title']);
 				$post->setBody($_POST['body']);
 				$post->setUserId(unserialize($_SESSION['user'])->id);
