@@ -1,0 +1,36 @@
+#!/bin/bash
+
+#
+# УСТАНОВКА ГЕНЕРАТОРА ДОКУМЕНТАЦИИ
+#
+# Убедитесь, что все зависимости установлены:
+# sudo apt-get install php5 git php5-curl php5-xsl GraphViz
+#
+# Устанавливаем composer
+# cd ../
+# curl -sS https://getcomposer.org/installer | php
+#
+# Скачиваем phpDocumentor2
+# git clone https://github.com/phpDocumentor/phpDocumentor2.git
+# cd phpDocumentor2
+# git checkout release-2.0.2
+#
+# cd phpDocumentor2
+# php /home/alexismaster/www/nirvana/composer.phar update
+#
+# Во время установки composer попросил меня пройти по ссылке на гитхаб чтобы создать токен
+# Токен это строка 3f3e4581b4f0c1509ac555801e33c26654e7d656
+
+
+# Путь к папке с исходниками фреймворка
+SOURCE="/home/alexismaster/www/nirvana/Nirvana"
+
+# Папка где будет находиться документация
+TARGET="/home/alexismaster/www/nirvana/public/doc"
+
+# Исключаемые файлы
+IGNORE="cli.php,*.twig,*/Twig/*,Twig/*"
+
+
+php phpDocumentor2/bin/phpdoc.php -d $SOURCE -t $TARGET -i $IGNORE --template responsive
+
