@@ -1,7 +1,10 @@
 <?php
 /**
- *
+ * Генератор кода
  */
+
+use Nirvana\CLI as CLI;
+
 
 // Корень проекта
 chdir(dirname(dirname(__DIR__)));
@@ -18,11 +21,18 @@ spl_autoload_register(function ($className) {
 });
 
 
-echo "\r\n";
-echo " ----------------------------------\r\n";
-echo " | --- Nirvana Code Generator --- |\r\n";
-echo " ----------------------------------\r\n";
-echo "\r\n";
+CLI\Console::println();
+CLI\Console::println('[green] ----------------------------------');
+CLI\Console::println('[green] | --- [red]Nirvana Code Generator[green] --- |');
+CLI\Console::println('[green] ----------------------------------');
+CLI\Console::println();
+
+
+// Нет аргументов - выводим справку
+if (!isset($argv[1]) || $argv[1] === 'help') {
+	include 'Nirvana/CLI/help.php';
+	exit();
+}
 
 
 // Имя скрипта содержащего класс команды
@@ -32,14 +42,19 @@ $script = implode('', $script);
 
 
 // Если скрипт команды существует
-if (!isset($argv[1]) or !is_file('Nirvana/CLI/Command/' . $script . '.php')) {
-	exit("Undefined Command\r\n");
+if (!is_file('Nirvana/CLI/Command/' . $script . '.php')) {
+	CLI\Console::println('[red] Undefined Command');
+	CLI\Console::println();
+	exit();
 }
 
 
+// Выполнение команды
 $className = "Nirvana\\CLI\\Command\\$script";
 $command = new $className($argv);
 $command->run();
 
 
-echo "\r\nComplete!\r\n\r\n";
+CLI\Console::println();
+CLI\Console::println('[green] Complete!');
+CLI\Console::println();

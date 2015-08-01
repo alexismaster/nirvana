@@ -2,7 +2,9 @@
 /**
  * Базовый класс всех комманд генератора кода
  *
- *
+ * @category   Nirvana
+ * @package    CLI.Command
+ * @author     Alexey Jukov <alexismaster@yandex.ru>
  */
 
 namespace Nirvana\CLI;
