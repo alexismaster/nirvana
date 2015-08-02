@@ -22,13 +22,37 @@ class Controller
 	private $moduleName;
 
 	/**
+	 * Имя экшена
+	 *
+	 * @var
+	 */
+	protected $actionName;
+
+	/**
+	 * @var
+	 */
+	protected $twig;
+
+	/**
 	 * Конструктор
 	 *
+	 * @param $actionName - Имя экшена
 	 * @param $moduleName - Имя модуля
 	 */
-	public function __construct($moduleName = false)
+	public function __construct($actionName, $moduleName = false)
 	{
+		$this->actionName = $actionName;
 		$this->moduleName = $moduleName;
+	}
+
+	/**
+	 * Функция выполняющаяся перед рендерингом шаблона
+	 *
+	 * @return bool
+	 */
+	public function beforeRender()
+	{
+		return true;
 	}
 
 	/**
@@ -54,14 +78,16 @@ class Controller
 			}
 
 			$loader = new \Twig_Loader_Filesystem($path);
-			$twig = new \Twig_Environment($loader);
-			if (isset($_SESSION)) $twig->addGlobal('session', $_SESSION);
+			$this->twig = new \Twig_Environment($loader);
+			if (isset($_SESSION)) $this->twig->addGlobal('session', $_SESSION);
 
 			// Десериализация
 			$filter = new \Twig_SimpleFilter('unserialize', 'unserialize');
-			$twig->addFilter($filter);
+			$this->twig->addFilter($filter);
 
-			echo $twig->render($name, $data);
+			$this->beforeRender();
+
+			echo $this->twig->render($name, $data);
 		} catch (\Exception $e) {
 			throw new \Exception('Template "' . $name . '" not exists in "' . $path . '"');
 		}

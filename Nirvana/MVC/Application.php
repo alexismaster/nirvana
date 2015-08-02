@@ -90,7 +90,7 @@ class Application
 			$controllerName = "\\Src\\$controllerName";
 		}
 
-		$module = new $controllerName($moduleName);
+		$module = new $controllerName($actionName, $moduleName);
 
 		// Запуск экшена
 		if (method_exists($module, $actionName)) {

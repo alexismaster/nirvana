@@ -16,6 +16,17 @@ use \Src\Entity as Entity;
 class PostController extends MVC\Controller
 {
 	/**
+	 * Ф-я выполняющаяся перед рендерингом шаблона
+	 */
+	public function beforeRender()
+	{
+		if ($this->actionName === 'indexAction') {
+			$filter = new \Twig_SimpleFilter('my_unserialize', 'unserialize');
+			$this->twig->addFilter($filter);
+		}
+	}
+
+	/**
 	 * Список постов
 	 */
 	public function indexAction()
