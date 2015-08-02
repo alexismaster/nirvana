@@ -22,7 +22,7 @@ chdir(dirname(__DIR__));
 require 'autoloader.php';
 
 
-// Режим отладдки?
+// Режим отладки?
 $debugMode = true;
 
 
