@@ -18,8 +18,6 @@ return array(
 	// Настройки маршрутизатора
 	'ROUTER' => array_merge(
 
-		require('_routes_.php'),
-
-		require(__DIR__ . '/../Module/SampleForumModule/config/_routes_.php')
+		require('_routes_.php')
 	)
 );

@@ -1,4 +1,4 @@
-{# Шаблон публичной части #}
+{# Шаблон страницы #}
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,18 +7,15 @@
     <link rel="shortcut icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-favicon.png"/>
 
-    <script type="text/javascript" src="/vendor/jquery.min.js"></script>
-    <script type="text/javascript" src="/vendor/bootstrap/js/bootstrap.js"></script>
     {% block head %}
-        <link rel="stylesheet" href="style.css" />
         <title>{% block title %}{% endblock %} - Nirvana</title>
-        <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.css">
         <link rel="stylesheet" href="/index.css">
     {% endblock %}
 </head>
 <body>
 <div id="wrapper">
 
+        {# Панель навигации #}
         {% include 'nav_bar.twig' %}
 
         <div id="content">{% block content %}{% endblock %}</div>
@@ -27,8 +24,12 @@
     <script type="text/javascript">
         // Выделение активной ссылки в меню
         (function () {
-            var $link = $('[href="'+location.pathname+'"');
-            if ($link && $link.size()) $link.parent().addClass('active');
+            var links = document.querySelectorAll('.nav_bar [href="'+location.pathname+'"'),
+                count = links.length, item;
+
+            while (count--) if ((item = links[count].parentNode).className !== 'brand') {
+                item.className = 'active';
+            }
         })();
     </script>
 

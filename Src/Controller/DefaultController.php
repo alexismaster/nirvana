@@ -15,24 +15,24 @@ use \Nirvana\ORM as ORM;
 class DefaultController extends MVC\Controller
 {
 	/**
+	 * Главная страница
+	 */
+	public function indexAction()
+	{
+		$this->render('default/index.twig');
+	}
+
+	/**
 	 * Установка/обновление таблиц БД
 	 */
 	public function ormAction()
 	{
 		ob_start();
-		$this->updateTables();
+        ORM\ORM::updateTables();
 		$content = ob_get_contents();
 		ob_end_clean();
 
-		$this->render('orm.twig', array('content' => $content));
-	}
-
-	/**
-	 * Обновление таблиц в соответствии с моделями (Entity)
-	 */
-	private function updateTables()
-	{
-		ORM\ORM::updateTables();
+		$this->render('default/orm.twig', array('content' => $content));
 	}
 
 	/**
@@ -42,7 +42,7 @@ class DefaultController extends MVC\Controller
 	 */
 	public function NotFoundAction($error)
 	{
-		$this->render('404.twig', array('error' => $error));
+		$this->render('default/404.twig', array('error' => $error));
 	}
 
 }
