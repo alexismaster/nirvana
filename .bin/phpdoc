@@ -23,10 +23,10 @@
 
 
 # Путь к папке с исходниками фреймворка
-SOURCE="/home/alexismaster/www/nirvana/Nirvana"
+SOURCE="Nirvana"
 
 # Папка где будет находиться документация
-TARGET="/home/alexismaster/www/nirvana/public/doc"
+TARGET="public/doc"
 
 # Исключаемые файлы
 IGNORE="cli.php,*.twig,*/Twig/*,Twig/*"
