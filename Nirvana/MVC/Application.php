@@ -202,10 +202,11 @@ class Application
 			}
 
 			// Запуск экшена
-			$this->callAction($route->getControllerName(), $route->getActionName(), $route->getModuleName(), $route->getParams());
-		} catch (\Exception $error) {
+			echo $this->callAction($route->getControllerName(), $route->getActionName(), $route->getModuleName(), $route->getParams());
+
+        } catch (\Exception $error) {
 			// Страница 404-й ошибки
-			$this->callAction('Controller\\DefaultController', 'NotFoundAction', false, array('error' => $error));
+            echo $this->callAction('Controller\\DefaultController', 'NotFoundAction', null, array('error' => $error));
 		}
 	}
 

@@ -55,29 +55,31 @@ class Controller
 		return true;
 	}
 
-	/**
-	 * Рендерит шаблон
-	 *
-	 * @param $name - Имя шаблона
-	 * @param array $data - Параметры передаваемые в шаблон
-	 * @param null $path - Путь к папке с шаблонами
-	 * @throws \Exception
-	 */
+    /**
+     * Рендерит шаблон
+     *
+     * @param $name - Имя шаблона
+     * @param array $data - Параметры передаваемые в шаблон
+     * @param null $path - Путь к папке с шаблонами
+     * @return string
+     * @throws \Exception
+     */
 	public function render($name, $data = array(), $path = null)
 	{
 		try {
-			if (is_null($path)) $path = 'Src/views';
+			$loader = new \Twig_Loader_Filesystem();
+            $loader->addPath('Src/views');              // Основная папка с шаблонами
 
-			if ($this->moduleName) {
-				$path = 'Src/Module/' . $this->moduleName . '/views';
-			}
+            // Шаблоны модуля
+            if ($this->moduleName) {
+                $loader->prependPath('Src/Module/' . $this->moduleName . '/views');
+            }
 
-			// Проверка существования шаблона
-			if (!is_file($path . '/' . $name)) {
-				throw new \Exception('Template "' . $name . '" not found');
-			}
+            // Пользовательская папка шаблонов
+            if ($path) {
+                $loader->prependPath($path);
+            }
 
-			$loader = new \Twig_Loader_Filesystem($path);
 			$this->twig = new \Twig_Environment($loader);
 			if (isset($_SESSION)) $this->twig->addGlobal('session', $_SESSION);
 
@@ -87,7 +89,7 @@ class Controller
 
 			$this->beforeRender();
 
-			echo $this->twig->render($name, $data);
+			return $this->twig->render($name, $data);
 		} catch (\Exception $e) {
 			throw new \Exception('Template "' . $name . '" not exists in "' . $path . '"');
 		}

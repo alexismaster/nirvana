@@ -19,7 +19,7 @@ class DefaultController extends MVC\Controller
 	 */
 	public function indexAction()
 	{
-		$this->render('default/index.twig');
+		return $this->render('default/index.twig');
 	}
 
 	/**
@@ -32,7 +32,7 @@ class DefaultController extends MVC\Controller
 		$content = ob_get_contents();
 		ob_end_clean();
 
-		$this->render('default/orm.twig', array('content' => $content));
+		return $this->render('default/orm.twig', array('content' => $content));
 	}
 
 	/**
@@ -42,7 +42,7 @@ class DefaultController extends MVC\Controller
 	 */
 	public function NotFoundAction($error)
 	{
-		$this->render('default/404.twig', array('error' => $error));
+		return $this->render('default/404.twig', array('error' => $error));
 	}
 
 }
