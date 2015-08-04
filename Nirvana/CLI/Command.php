@@ -10,7 +10,7 @@
 namespace Nirvana\CLI;
 
 
-class Command
+abstract class Command implements ICommand
 {
 	/**
 	 * Параметры командной строки
@@ -29,7 +29,7 @@ class Command
 	/**
 	 * Конструктор
 	 *
-	 * @param $argv
+	 * @param $argv - Аргументы командной оболочки
 	 */
 	public function __construct($argv)
 	{
@@ -40,9 +40,9 @@ class Command
 	/**
 	 * Создаёт файл по шаблону
 	 *
-	 * @param $path
-	 * @param $templateName
-	 * @param $params
+	 * @param $path - Путь к шаблону
+	 * @param $templateName - Имя шаблона
+	 * @param $params - Параметры передаваемы в шаблон
 	 */
 	public function createFile($path, $templateName, $params)
 	{
@@ -52,14 +52,5 @@ class Command
 		}
 
 		file_put_contents($path, $this->twig->render($templateName, $params));
-	}
-
-
-	/**
-	 * Точка входа
-	 */
-	public function run()
-	{
-		//
 	}
 }

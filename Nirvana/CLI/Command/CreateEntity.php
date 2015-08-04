@@ -17,4 +17,19 @@ class CreateEntity extends CLI\Command
 	{
 		//....
 	}
+
+    public function getSyntax()
+    {
+        return '[green]create_entity [cyan]Name1,Name2,NameN [white][--module NameM]';
+    }
+
+    public function getDescription()
+    {
+        return '';
+    }
+
+    public function getExample()
+    {
+        return '[cyan]create_entity Product,Category --module Catalog';
+    }
 }

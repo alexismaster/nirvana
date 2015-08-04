@@ -28,20 +28,18 @@ CLI\Console::println('[green] ----------------------------------');
 CLI\Console::println();
 
 
-// Нет аргументов - выводим справку
+// Имя скрипта содержащего класс команды
 if (!isset($argv[1]) || $argv[1] === 'help') {
-	include 'Nirvana/CLI/help.php';
-	exit();
+    $script = 'Help';
+}
+else {
+    $script = explode('_', $argv[1]);
+    $script = array_map('ucfirst', $script);
+    $script = implode('', $script);
 }
 
 
-// Имя скрипта содержащего класс команды
-$script = explode('_', $argv[1]);
-$script = array_map('ucfirst', $script);
-$script = implode('', $script);
-
-
-// Если скрипт команды существует
+// Если скрипт команды не существует
 if (!is_file('Nirvana/CLI/Command/' . $script . '.php')) {
 	CLI\Console::println('[red] Undefined Command');
 	CLI\Console::println();

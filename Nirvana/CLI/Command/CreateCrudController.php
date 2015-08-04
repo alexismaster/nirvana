@@ -17,4 +17,19 @@ class CreateCrudController extends CLI\Command
 	{
 		//....
 	}
+
+    public function getSyntax()
+    {
+        return '[green]create_crud_controller [cyan]Name1,Name2,NameN [white][--module NameM]';
+    }
+
+    public function getDescription()
+    {
+        return '';
+    }
+
+    public function getExample()
+    {
+        return '[cyan]create_crud_controller Product,Category,Basket --module Catalog';
+    }
 }

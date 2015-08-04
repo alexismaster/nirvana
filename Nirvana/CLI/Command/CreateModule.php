@@ -37,5 +37,20 @@ class CreateModule extends CLI\Command
 		// _routes_.php
 		$this->createFile($path . '/config/_routes_.php', 'routes.twig', array('name' => $name));
 	}
+
+    public function getSyntax()
+    {
+        return '[green]create_module [cyan]Name1,Name2,NameN';
+    }
+
+    public function getDescription()
+    {
+        return '';
+    }
+
+    public function getExample()
+    {
+        return '[cyan]create_module Catalog,Blog,Forum';
+    }
 }
 

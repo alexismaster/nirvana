@@ -86,9 +86,9 @@ class CreateController extends CLI\Command
 
 		$controllers = array_map(function ($item) {
 			// Указан модуль
-			if ($item === 'module' or $this->isCatalog) {
+			if ($item === '--module' or $this->isCatalog) {
 				$this->isCatalog = true;
-				if ($item !== 'module') $this->catalogName = $item;
+				if ($item !== '--module') $this->catalogName = $item;
 				return false;
 			}
 
@@ -108,6 +108,21 @@ class CreateController extends CLI\Command
 
 		return $res;
 	}
+
+    public function getSyntax()
+    {
+        return '[green]create_controller [cyan]Name1,Name2,NameN [white][--module NameM]';
+    }
+
+    public function getDescription()
+    {
+        return '';
+    }
+
+    public function getExample()
+    {
+        return '[cyan]create_controller Product,Category,Basket --module Catalog';
+    }
 }
 
 
