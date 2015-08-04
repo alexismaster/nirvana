@@ -22,3 +22,8 @@ PHP Micro Framework
 - [chee](http://phpforum.su/index.php?showuser=38654)
 - [bestxp](http://phpforum.su/index.php?showuser=36605)
 - [ZendExpert](http://github.com/ZendExpert)
+
+
+# License
+
+Nirvana Framework это ПО с открытым кодом распространяющееся по лицензии [MIT](http://opensource.org/licenses/MIT)
