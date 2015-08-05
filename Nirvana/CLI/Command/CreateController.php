@@ -11,26 +11,13 @@ use \Nirvana\CLI as CLI;
 
 class CreateController extends CLI\Command
 {
-	/**
-	 * @var bool
-	 */
-	private $isCatalog = false;
-
-
-	/**
-	 * @var null
-	 */
-	private $catalogName = null;
-
 
 	/**
 	 * Точка входа
 	 */
 	public function run()
 	{
-		//global $twig;
-
-		$res = $this->getControllers();
+		$res = $this->getNames();
 
 		if (!count($res)) {
 			exit("Undefined controller name.\r\n");
@@ -44,20 +31,24 @@ class CreateController extends CLI\Command
 			}
 
 			// Контроллер модуля
-			if ($this->isCatalog) {
+			if ($this->isModule) {
 
-				if (!is_dir("Src/Module/{$this->catalogName}Module")) {
-					exit("Module {$this->catalogName} not found.");
+				if (!is_dir("Src/Module/{$this->moduleName}Module")) {
+					exit("Module {$this->moduleName} not found.");
 				}
 
-				$path = "Src/Module/{$this->catalogName}Module/Controller/{$name}Controller.php";
+				$path = "Src/Module/{$this->moduleName}Module/Controller/{$name}Controller.php";
 
 				if (is_file($path)) {
 					echo "Controller \"{$name}Controller\" already exists!\r\n";
 					continue;
 				}
 
-				$this->createFile($path, 'module_controller.twig', array('name' => $name, 'module' => $this->catalogName));
+				$this->createFile($path, 'module_controller.twig', array('name' => $name, 'module' => $this->moduleName));
+
+                $views = "Src/Module/{$this->moduleName}Module/views/" . strtolower($name);
+                if (!is_dir($views)) mkdir($views, 0777);
+
 			} // Обычный контроллер
 			else {
 				$path = "Src/Controller/{$name}Controller.php";
@@ -68,57 +59,38 @@ class CreateController extends CLI\Command
 				}
 
 				$this->createFile($path, 'controller.twig', array('name' => $name));
+
+                $views = "Src/views/" . strtolower($name);
+                if (!is_dir($views)) mkdir($views, 0777);
 			}
 		}
 	}
 
-
-	/**
-	 * Возвращает список имён контроллеров которые необходимо создать
-	 *
-	 * @return array
-	 */
-	public function getControllers()
-	{
-		$res = array();
-
-		$controllers = array_slice($this->argv, 2);
-
-		$controllers = array_map(function ($item) {
-			// Указан модуль
-			if ($item === '--module' or $this->isCatalog) {
-				$this->isCatalog = true;
-				if ($item !== '--module') $this->catalogName = $item;
-				return false;
-			}
-
-			$item = str_replace(' ', '', $item);
-			$item = str_replace('controller', '', $item);
-			$item = str_replace('Controller', '', $item);
-			return explode(',', $item);
-		}, $controllers);
-
-		$controllers = array_filter($controllers, function ($item) {
-			return ($item !== false);
-		});
-
-		foreach ($controllers as $item) {
-			$res = array_merge($res, $item);
-		}
-
-		return $res;
-	}
-
+    /**
+     * Синтаксис команды
+     *
+     * @return string
+     */
     public function getSyntax()
     {
         return '[green]create_controller [cyan]Name1,Name2,NameN [white][--module NameM]';
     }
 
+    /**
+     * Описание команды
+     *
+     * @return string
+     */
     public function getDescription()
     {
         return '';
     }
 
+    /**
+     * Пример использования
+     *
+     * @return string
+     */
     public function getExample()
     {
         return '[cyan]create_controller Product,Category,Basket --module Catalog';

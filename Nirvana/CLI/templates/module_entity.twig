@@ -1,0 +1,22 @@
+<?php
+/**
+ * Сущность {{ name }}
+ *
+ * @category   {{module}}Module
+ * @package    {{module}}Module.Entity
+ * @author     Alexey Jukov <alexismaster@yandex.ru>
+ */
+
+namespace Src\Module\{{module}}Module\Entity;
+
+use \Nirvana\ORM as ORM;
+
+class {{ name }} extends ORM\Entity
+{
+	/**
+	 * @ORM\Column(type="integer")
+	 * @ORM\Id
+	 * @ORM\GeneratedValue(strategy="AUTO")
+	 */
+	public $id;
+}

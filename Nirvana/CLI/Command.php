@@ -53,4 +53,55 @@ abstract class Command implements ICommand
 
 		file_put_contents($path, $this->twig->render($templateName, $params));
 	}
+
+    /**
+     * @var bool
+     */
+    protected $isModule = false;
+
+
+    /**
+     * @var null
+     */
+    protected $moduleName = null;
+
+
+    /**
+     * Возвращает список имён классов которые необходимо создать
+     *
+     * @param string $type
+     * @return array
+     */
+    public function getNames($type = 'controller')
+    {
+        $res   = array();
+        $names = array_slice($this->argv, 2);
+
+        foreach ($names as $i => $item) {
+            // Указан модуль
+            if ($item === '--module' or $this->isModule) {
+                $this->isModule = true;
+                if ($item !== '--module') {
+                    $this->moduleName = $item;
+                }
+                unset($names[$i]);
+                continue;
+            }
+
+            $names[$i] = str_replace(' ', '', $names[$i]);
+            $names[$i] = str_replace($type, '', $names[$i]);
+            $names[$i] = str_replace(ucfirst($type), '', $names[$i]);
+            $names[$i] = explode(',', $names[$i]);
+        }
+
+        $names = array_filter($names, function ($item) {
+            return ($item !== false);
+        });
+
+        foreach ($names as $item) {
+            $res = array_merge($res, $item);
+        }
+
+        return $res;
+    }
 }
