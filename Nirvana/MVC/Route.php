@@ -67,7 +67,7 @@ class Route
 	 */
 	public function test()
 	{
-		$tpl = preg_replace('/:[a-z]+/i', '([a-z0-9]+)', $this->url);
+		$tpl = preg_replace('/:[a-z]+/i', '([a-z0-9_-]+)', $this->url);
 		$tpl = '/^' . preg_replace('/\//', '\/', $tpl) . '$/i';
 		$this->regExp = $tpl;
 
@@ -86,7 +86,7 @@ class Route
 	public function getParams()
 	{
 		preg_match($this->regExp, $_SERVER['REQUEST_URI'], $values);    // Значения
-		preg_match_all('/:([a-z]+)/i', $this->url, $keys);              // Ключи
+		preg_match_all('/:([a-z0-9_-]+)/i', $this->url, $keys);              // Ключи
 		$params = array_combine($keys[1], array_slice($values, 1));
 		if (!is_array($params)) $params = array();
 		return $params;
