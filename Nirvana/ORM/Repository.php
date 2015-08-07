@@ -24,14 +24,26 @@ class Repository extends ORM
 	 */
 	private $entityClassName;
 
-	/**
-	 * Конструктор
-	 *
-	 * @param $entityClassName - Имя класса сущности
-	 */
-	public function __construct($entityClassName)
+    /**
+     * Имя модуля
+     *
+     * @var bool
+     */
+	private $moduleName;
+
+    /**
+     * Конструктор
+     *
+     * @param $entityClassName - Имя класса сущности
+     * @param bool $moduleName
+     */
+	public function __construct($entityClassName, $moduleName = false)
 	{
 		$this->entityClassName = $entityClassName;
+
+        if ($moduleName) {
+            $this->moduleName = $moduleName;
+        }
 	}
 
 	/**
@@ -74,6 +86,27 @@ class Repository extends ORM
 		}
 	}
 
+    /**
+     * @return array|\PDOStatement
+     */
+    public function findAll()
+    {
+        $table = $this->camelCase2underscore($this->entityClassName);
+
+        if ($this->moduleName) {
+            $table = $this->camelCase2underscore($this->moduleName . $this->entityClassName);
+        }
+
+        //var_dump('SELECT * FROM ' . $table);
+        $result = $this->query('SELECT * FROM ' . $table);
+
+        if ($result && $result->rowCount()) {
+            return $this->mapResult($result);
+        }
+
+        return ($result) ? array() : $result;
+    }
+
 	/**
 	 * Конструирует запрос
 	 *
@@ -85,7 +118,13 @@ class Repository extends ORM
 	private function makeQuery($type, $values, $glue = 'AND')
 	{
 		$params = array();
-		$table  = strtolower($this->entityClassName);
+		//$table  = strtolower($this->entityClassName);
+
+        $table = $this->camelCase2underscore($this->entityClassName);
+
+        if ($this->moduleName) {
+            $table = $this->camelCase2underscore($this->moduleName . $this->entityClassName);
+        }
 
 		foreach ($values as $column => $value) {
 			$values[$column] = $column . ' = :' . $column;
@@ -137,6 +176,10 @@ class Repository extends ORM
 	{
 		$resArr = array();
 		$classN = '\\Src\\Entity\\' . $this->entityClassName;
+
+        if ($this->moduleName) {
+            $classN = '\\Src\\Module\\' . $this->moduleName . 'Module\\Entity\\' . $this->entityClassName;
+        }
 
 		while ($line = $result->fetch(\PDO::FETCH_ASSOC)) {
 			$entity = new $classN();

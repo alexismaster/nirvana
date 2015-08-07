@@ -119,15 +119,16 @@ class Controller
 		header('Location: ' . $url);
 	}
 
-	/**
-	 * Возвращает экземпляр класса Repository для конкретного типа сущности
-	 *
-	 * @param $entityClassName - Имя класса сущности
-	 * @return ORM\Repository
-	 */
-	public function getRepository($entityClassName)
+    /**
+     * Возвращает экземпляр класса Repository для конкретного типа сущности
+     *
+     * @param $entityClassName - Имя класса сущности
+     * @param $moduleName
+     * @return ORM\Repository
+     */
+	public function getRepository($entityClassName, $moduleName = false)
 	{
-		return new ORM\Repository($entityClassName);
+		return new ORM\Repository($entityClassName, $moduleName);
 	}
 
 	/**
