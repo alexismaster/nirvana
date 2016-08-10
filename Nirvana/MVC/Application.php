@@ -69,6 +69,16 @@ class Application
 		return self::$_instance;
 	}
 
+	public function configSection($name)
+	{
+		return $this->config[$name];
+	}
+
+	public static function getConfigSection($name)
+	{
+		return self::$_instance->configSection($name);
+	}
+
 
 	/**
 	 * Вызов экшена
