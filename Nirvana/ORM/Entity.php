@@ -59,13 +59,14 @@ class Entity extends ORM
 		$columnsM = $this->getColumnsByModel();
 
 		// Колонки по таблице
-		foreach ($columnsT as $name => $properties) if (!$columnsM[$name]) {
+		foreach ($columnsT as $name => $properties) if (!isset($columnsM[$name]) || is_null($columnsM[$name])) {
 			$alters[] = $this->dropColumnSql($name);
 		}
 
 		// Колонки по модели
 		foreach ($columnsM as $name => $properties) {
-			if (!$columnsT[$name]) {
+			//if (!$columnsT[$name]) {
+			if (!isset($columnsT[$name]) || is_null($columnsT[$name])) { 
 				$alters[] = $this->addColumnSql($name, $this->getTypeColumn($properties));
 			} else {
 				// изменение типа колонки
@@ -73,7 +74,15 @@ class Entity extends ORM
 				if ($columnsT[$name]['Extra'] === 'auto_increment') $type .= ' AUTO_INCREMENT PRIMARY KEY';
 
 				if ($this->getTypeColumn($properties) !== $type) {
-					$alters[] = $this->modifyColumnSql($name, $this->getTypeColumn($properties));
+					//$alters[] = $this->modifyColumnSql($name, $this->getTypeColumn($properties));
+
+					if ($this->getTypeColumn($properties) === 'datetime') { 
+						$alters[] = $this->dropColumnSql($name); 
+						$alters[] = $this->addColumnSql($name, $this->getTypeColumn($properties)); 
+					} 
+					else { 
+						$alters[] = $this->modifyColumnSql($name, $this->getTypeColumn($properties)); 
+					} 
 				}
 			}
 		}
@@ -295,7 +304,7 @@ class Entity extends ORM
 	 */
 	private function getModulePrefix()
 	{
-		preg_match('/([^\\\]+)Module/', $this->getClass(), $matches);
+		preg_match("/([^\\\]+)Module/", $this->getClass(), $matches);
 
 		if (!isset($matches[1])) return '';
 
@@ -365,7 +374,7 @@ class Entity extends ORM
 
 			$names[] = $name;
 
-			if ($options['Column']['type'] !== 'string' && $options['Column']['type'] !== 'text') {
+			if ($options['Column']['type'] !== 'string' && $options['Column']['type'] !== 'text' && $options['Column']['type'] !== 'datetime') {
 				$values[] = $this->$name;
 			} else {
 				$values[] = "'" . $this->$name . "'";
@@ -400,7 +409,7 @@ class Entity extends ORM
 		foreach ($this->getColumnsByModel() as $name => $options) {
 			if (isset($options['GeneratedValue']) && $options['GeneratedValue']['strategy'] === 'AUTO') continue;
 
-			if ($options['Column']['type'] !== 'string' && $options['Column']['type'] !== 'text') {
+			if ($options['Column']['type'] !== 'string' && $options['Column']['type'] !== 'text' && $options['Column']['type'] !== 'datetime') {
 				$values[] = $name . '=' . $this->$name;
 			} else {
 				$values[] = $name . "='" . $this->$name . "'";
