@@ -49,13 +49,15 @@ class ORM
 	public static function updateTables()
 	{
 		foreach (glob('Src/Entity/*.php') as $path) {
-			$className = '\\Src\Entity\\' . pathinfo($path)['filename'];
+			$info = pathinfo($path);
+			$className = '\\Src\Entity\\' . $info['filename'];
 			self::_updateTable($className);
 		}
 
 		foreach (glob('Src/Module/**/Entity/*.php') as $path) {
 			preg_match('/\\/(([A-z]+)Module)/', $path, $matches);
-			$className = '\\Src\\Module\\' . $matches[1] . '\\Entity\\' . pathinfo($path)['filename'];
+			$info = pathinfo($path);
+			$className = '\\Src\\Module\\' . $matches[1] . '\\Entity\\' . $info['filename'];
 			self::_updateTable($className);
 		}
 	}
@@ -77,7 +79,7 @@ class ORM
 			$entity = new $className();
 			$entity->updateTable();
 		} catch (\Exception $error) {
-			throw new \Exception('Не удалось обновить таблицу');
+			throw new \Exception('Не удалось обновить таблицу ' . $className . '. Причина: ' . $error->getMessage());
 		}
 	}
 }
