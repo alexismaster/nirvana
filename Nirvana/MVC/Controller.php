@@ -68,17 +68,17 @@ class Controller
 	{
 		try {
 			$loader = new \Twig_Loader_Filesystem();
-            $loader->addPath('Src/views');              // Основная папка с шаблонами
+      $loader->addPath('Src/views');              // Основная папка с шаблонами
 
-            // Шаблоны модуля
-            if ($this->moduleName) {
-                $loader->prependPath('Src/Module/' . $this->moduleName . '/views');
-            }
+      // Шаблоны модуля
+      if ($this->moduleName) {
+        $loader->prependPath('Src/Module/' . $this->moduleName . '/views');
+      }
 
-            // Пользовательская папка шаблонов
-            if ($path) {
-                $loader->prependPath($path);
-            }
+      // Пользовательская папка шаблонов
+      if ($path) {
+        $loader->prependPath($path);
+      }
 
 			$this->twig = new \Twig_Environment($loader);
 			if (isset($_SESSION)) $this->twig->addGlobal('session', $_SESSION);
@@ -90,7 +90,8 @@ class Controller
 			$this->beforeRender();
 
 			return $this->twig->render($name, $data);
-		} catch (\Exception $e) {
+		}
+    catch (\Exception $e) {
 			throw new \Exception('Template "' . $name . '" not exists in "' . $path . '"');
 		}
 	}
