@@ -28,10 +28,10 @@ class Router implements \Countable
 	 */
 	public function addRoute($name, Route $route)
 	{
-        if (isset($this->_routes[$name])) {
-            throw new \Exception("Route \"{$name}\" already exists");
-        }
-        
+		if (isset($this->_routes[$name])) {
+			throw new \Exception("Route \"{$name}\" already exists");
+		}
+
 		$this->_routes[$name] = $route;
 	}
 
@@ -46,12 +46,35 @@ class Router implements \Countable
 			return $route;
 		}
 	}
-    
-    /**
-     * Реализация интерфейса Countable
-     */
-    public function count()
-    {
-        return count($this->_routes);
-    }
+
+	/**
+	 * Пытается интерпретировать URL как [module]/controller/action
+	 */
+	public function getAutoRoute()
+	{
+		$url = $_SERVER['REQUEST_URI'];
+		$url = preg_replace("/^\\//", "", $url);
+		$url = preg_replace("/\\/$/", "", $url);
+		$url = explode("/", $url);
+
+		$route = null;
+
+		if (count($url) === 2) {
+			$route = new Route($_SERVER['REQUEST_URI'], array('controller' => ucfirst($url[0]), 'action' => ucfirst($url[1])));
+			$route->test();
+		} else if (count($url) === 3) {
+			$route = new Route($_SERVER['REQUEST_URI'], array('module' => ucfirst($url[0]), 'controller' => ucfirst($url[1]), 'action' => ucfirst($url[2])));
+			$route->test();
+		}
+
+		return $route;
+	}
+
+	/**
+	 * Реализация интерфейса Countable
+	 */
+	public function count()
+	{
+		return count($this->_routes);
+	}
 }

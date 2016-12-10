@@ -15,6 +15,13 @@ use Nirvana\MVC\Relation\RelationFactory;
 
 class Entity extends ORM
 {
+	/**
+	 * Пока так. Позже нужно будет разделить MySQL и Postgres по отдельным классам
+	 */
+	private function isPostgres()
+	{
+		return (App::getConfigSection('DB')['TYPE'] === 'postgres');
+	}
 
 	/**
 	 * Создаёт/обновляет таблицы так чтобы они соответствовали имеющимся моделям
@@ -34,18 +41,19 @@ class Entity extends ORM
 			$columnsSQL[] = $sql;
 		}
 
-
 		// Установка таблицы
 		if (!$this->getColumnsByTable()) {
-			echo "\r\n\r\n";
+			echo "\r\n# Создание таблицы \r\n";
 			$tableSQL = $this->tableSQL($this->getTableName(), implode(",\r\n", $columnsSQL));
-			echo $tableSQL . "\r\n---------------------------------------------------\r\n";
+			echo $tableSQL . "\r\n";
 
 			$res = $this->query($tableSQL); // Создание таблицы
+			$row = $res->fetch(\PDO::FETCH_ASSOC);
 			if (!$res) var_dump(mysql_error());
 		}
 
 		// Модификация таблицы
+			echo "\r\n# Обновление полей\r\n";
 		$this->modifyTable();
 	}
 
@@ -65,7 +73,6 @@ class Entity extends ORM
 
 		// Колонки по модели
 		foreach ($columnsM as $name => $properties) {
-			//if (!$columnsT[$name]) {
 			if (!isset($columnsT[$name]) || is_null($columnsT[$name])) { 
 				$alters[] = $this->addColumnSql($name, $this->getTypeColumn($properties));
 			} else {
@@ -74,8 +81,6 @@ class Entity extends ORM
 				if ($columnsT[$name]['Extra'] === 'auto_increment') $type .= ' AUTO_INCREMENT PRIMARY KEY';
 
 				if ($this->getTypeColumn($properties) !== $type) {
-					//$alters[] = $this->modifyColumnSql($name, $this->getTypeColumn($properties));
-
 					if ($this->getTypeColumn($properties) === 'datetime') { 
 						$alters[] = $this->dropColumnSql($name); 
 						$alters[] = $this->addColumnSql($name, $this->getTypeColumn($properties)); 
@@ -91,7 +96,7 @@ class Entity extends ORM
 
 		foreach ($alters as $sql) {
 			$res = App::getAdapter()->query($sql);
-			echo "<font color='blue'>$sql</font>";
+			echo "<font>$sql</font>\r\n";
 			if (!$res) echo '<div>' . mysql_error() . '</div>';
 		}
 	}
@@ -109,15 +114,17 @@ class Entity extends ORM
 
 		// Колонки по модели
 		foreach ($columnsM as $name => $properties) {
+			if (!isset($columnsT[$name])) $columnsT[$name] = array();
+			
 			// Создание уникального индекса
 			if (isset($properties['Column']['unique']) && $properties['Column']['unique'] == 'true' &&
-				$columnsT[$name]['Key'] != 'UNI'
+				$columnsT[$name] && $columnsT[$name]['Key'] != 'UNI'
 			) {
 				$alters[] = "ALTER TABLE `{$this->getTableName()}` ADD UNIQUE INDEX `$name` (`$name`);";
 			}
 
 			// Удаление уникального индекса
-			if ($columnsT[$name]['Key'] === 'UNI' and (!isset($properties['Column']['unique']) ||
+			if ($columnsT[$name] && $columnsT[$name]['Key'] === 'UNI' and (!isset($properties['Column']['unique']) ||
 					$properties['Column']['unique'] != 'true')
 			) {
 				$alters[] = "ALTER TABLE `{$this->getTableName()}` DROP INDEX `$name`;";
@@ -132,7 +139,7 @@ class Entity extends ORM
 	 *
 	 * @return array
 	 */
-	public function getColumnsByModel()
+	private function getColumnsByModel()
 	{
 		$result = array();
 		$rc = new \ReflectionClass($this->getClass());
@@ -153,7 +160,7 @@ class Entity extends ORM
 	 *
 	 * @return array
 	 */
-	public function getColumnsByTable()
+	private function getColumnsByTable()
 	{
 		$columns = array();
 		$result  = $this->query('SHOW COLUMNS FROM ' . $this->getTableName());
@@ -173,7 +180,7 @@ class Entity extends ORM
 	 * @param $comment - Комментарий
 	 * @return array
 	 */
-	public function columnOptions($comment)
+	private function columnOptions($comment)
 	{
 		$result = array();
 		preg_match_all('/@ORM\\\(.*)/', $comment, $fragments);
@@ -203,9 +210,14 @@ class Entity extends ORM
 	 * @param $parameters
 	 * @return string
 	 */
-	public function columnSQL($name, $parameters)
+	private function columnSQL($name, $parameters)
 	{
 		$type = $this->getTypeColumn($parameters);
+		
+		if ($this->isPostgres()) {
+			return "\t$name $type NOT NULL";
+		}
+
 		return "\t`$name` $type NOT NULL";
 	}
 
@@ -215,15 +227,23 @@ class Entity extends ORM
 	 * @param $properties
 	 * @return string
 	 */
-	public function getTypeColumn($properties)
+	private function getTypeColumn($properties)
 	{
 		if ($properties['Column']['type'] === 'integer') {
 			$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : '11';
 			// AUTO_INCREMENT
 			if (isset($properties['GeneratedValue']) && $properties['GeneratedValue']['strategy'] === 'AUTO') {
-				return 'int(' . $ln . ') AUTO_INCREMENT PRIMARY KEY';
+				if ($this->isPostgres()) {
+					return 'SERIAL PRIMARY KEY';
+				} else {
+					return 'int(' . $ln . ') AUTO_INCREMENT PRIMARY KEY';
+				}
 			}
-			return 'int(' . $ln . ')';
+			if ($this->isPostgres()) {
+				return 'integer';
+			} else {
+				return 'int(' . $ln . ')';
+			}
 		}
 
 		if ($properties['Column']['type'] === 'string') {
@@ -241,9 +261,13 @@ class Entity extends ORM
 	 * @param $columnsSQL string - Колонки
 	 * @return string
 	 */
-	public function tableSQL($name, $columnsSQL)
+	private function tableSQL($name, $columnsSQL)
 	{
 		// Adapter::DEFAULT_CHARSET
+		if ($this->isPostgres()) {
+			return "CREATE TABLE $name (\r\n$columnsSQL\r\n);";
+		}
+
 		return "CREATE TABLE `$name` (\r\n$columnsSQL\r\n) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 	}
 
@@ -251,7 +275,7 @@ class Entity extends ORM
 	 * @param $name
 	 * @return string
 	 */
-	public function dropColumnSql($name)
+	private function dropColumnSql($name)
 	{
 		return 'ALTER TABLE `' . $this->getTableName() . '` DROP COLUMN ' . $name;
 	}
@@ -261,9 +285,14 @@ class Entity extends ORM
 	 * @param $type
 	 * @return string
 	 */
-	public function addColumnSql($name, $type)
+	private function addColumnSql($name, $type)
 	{
-		return 'ALTER TABLE `' . $this->getTableName() . '` ADD ' . $name . ' ' . $type;
+		if ($this->isPostgres()) {
+			return 'ALTER TABLE ' . $this->getTableName() . ' ADD ' . $name . ' ' . $type;
+		}
+		else {
+			return 'ALTER TABLE `' . $this->getTableName() . '` ADD ' . $name . ' ' . $type;
+		}
 	}
 
 	/**
@@ -271,7 +300,7 @@ class Entity extends ORM
 	 * @param $type
 	 * @return string
 	 */
-	public function modifyColumnSql($name, $type)
+	private function modifyColumnSql($name, $type)
 	{
 		return 'ALTER TABLE `' . $this->getTableName() . '` MODIFY ' . $name . ' ' . $type;
 	}

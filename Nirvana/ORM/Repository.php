@@ -97,7 +97,6 @@ class Repository extends ORM
             $table = $this->camelCase2underscore($this->moduleName . $this->entityClassName);
         }
 
-        //var_dump('SELECT * FROM ' . $table);
         $result = $this->query('SELECT * FROM ' . $table);
 
         if ($result && $result->rowCount()) {
@@ -118,13 +117,12 @@ class Repository extends ORM
 	private function makeQuery($type, $values, $glue = 'AND')
 	{
 		$params = array();
-		//$table  = strtolower($this->entityClassName);
 
-        $table = $this->camelCase2underscore($this->entityClassName);
+		$table = $this->camelCase2underscore($this->entityClassName);
 
-        if ($this->moduleName) {
-            $table = $this->camelCase2underscore($this->moduleName . $this->entityClassName);
-        }
+		if ($this->moduleName) {
+			$table = $this->camelCase2underscore($this->moduleName . $this->entityClassName);
+		}
 
 		foreach ($values as $column => $value) {
 			$values[$column] = $column . ' = :' . $column;
@@ -132,7 +130,8 @@ class Repository extends ORM
 		}
 
 		$where  = implode(' '.$glue.' ', $values);
-		$result = $this->query($type . ' FROM `'.$table.'` WHERE '.$where.';', $params);
+		//$result = $this->query($type . ' FROM `'.$table.'` WHERE '.$where.';', $params);
+		$result = $this->query($type . ' FROM '.$table.' WHERE '.$where.';', $params);
 
 		return $result;
 	}

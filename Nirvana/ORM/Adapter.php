@@ -53,12 +53,21 @@ class Adapter
 		}
 
 		try {
-			$dsn = 'mysql:host=' . $config['MYSQL_HOST'] .
-					';port='     . $config['MYSQL_PORT'] .
-					';dbname='   . $config['MYSQL_BASE'] .
-					';charset='  . $config['CHARSET'];
+			if ($config['TYPE'] === 'mysql') {
+				$dsn = 'mysql:host=' . $config['MYSQL_HOST'] .
+								';port='     . $config['MYSQL_PORT'] .
+								';dbname='   . $config['MYSQL_BASE'] .
+								';charset='  . $config['CHARSET'];
 
-			$this->pdo = new \PDO($dsn, $config['MYSQL_USER'], $config['MYSQL_PASS']);
+				$this->pdo = new \PDO($dsn, $config['MYSQL_USER'], $config['MYSQL_PASS']);
+			}
+			elseif ($config['TYPE'] === 'postgres') {
+				$dsn = 'pgsql:dbname='.$config['PG_BASE'].' host='.$config['PG_HOST'];
+				$this->pdo = new \PDO($dsn, $config['PG_USER'], $config['PG_PASS']);
+			}
+			else {
+				throw new Exception("Не известный тип СУБД - " . $config['TYPE'], 1);
+			}
 		}
 		catch (\PDOException $error) {
 			switch ($error->getCode()) {
@@ -81,7 +90,7 @@ class Adapter
 	 */
 	private function __clone()
 	{
-		// ...
+		return;
 	}
 
 	/**
@@ -95,6 +104,9 @@ class Adapter
 	{
 		$request = $this->pdo->prepare($sql);
 		$request->execute($input_parameters);
+		// var_dump($sql);
+		// var_dump($this->pdo->errorCode()); 
+		// var_dump($this->pdo->errorInfo()); 
 
 		return $request;
 	}

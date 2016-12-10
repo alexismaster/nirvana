@@ -91,8 +91,6 @@ class Application
 	 */
 	public function callAction($controllerName, $actionName, $moduleName, $params)
 	{
-
-
 		if ($moduleName) {
 			$controllerName = "\\Src\\Module\\$controllerName";
 		}
@@ -118,14 +116,14 @@ class Application
 					$param = new ReflectionParameter(array($controllerName, $actionName), $name);
 					// Параметр не является опциональным
 					if (!$param->isOptional()) {
-						throw new \Exception('Параметр "' . $name . '" является обязательным. Экшен: ' . $actionName);
+						throw new \Exception('Параметр "'.$name.'" является обязательным. Экшен: '.$actionName);
 					}
 				}
 			}
 
 			$data = call_user_func_array(array($module, $actionName), $params);
 		} else {
-			throw new \Exception('Экшен "' . $actionName . '" не найден. Контроллер  "' . $controllerName . '"');
+			throw new \Exception('Экшен "'.$actionName.'" не найден. Контроллер  "'.$controllerName.'".');
 		}
 
 		return $data;
@@ -187,42 +185,47 @@ class Application
 	 */
 	public function run($debug)
 	{
-        $this->debug = $debug;
+		$this->debug = $debug;
 
-        try {
-            // В режиме отладки показываем все ошибки
-            if ($debug) {
-                error_reporting(E_ALL);
-                ini_set('display_errors', 1);
-            }
+		try {
+			// В режиме отладки показываем все ошибки
+			if ($debug) {
+				error_reporting(E_ALL);
+				ini_set('display_errors', 1);
+			}
 
-            session_start();
-            session_name('nirvana');
+			session_start();
+			session_name('nirvana');
 
-            // Перехват исключений
-            set_error_handler(function ($severity, $message, $filename, $lineNo) {
+			// Перехват исключений
+			set_error_handler(function ($severity, $message, $filename, $lineNo) {
 				echo $message;
 				return;
 			});
 
-            $route = $this->initRouter()->getRoute();  // Маршрут соответствующий текущему URL
+			$route = $this->initRouter()->getRoute();  // Маршрут соответствующий текущему URL
 
-            if (!$route) {
-                throw new \Exception('Страница не найдена', 404);
-            }
+			if (!$route) {
+				$route = $this->router->getAutoRoute();
+			}
+
+			if (!$route) {
+				throw new \Exception('Страница не найдена', 404);
+			}
+
 			// Запуск экшена
 			$response = $this->callAction($route->getControllerName(), $route->getActionName(), $route->getModuleName(), $route->getParams());
 
-            if (is_null($response)) {
-                throw new \Exception('Убедитесь что констроллер '  . $route->getControllerName() .
-                    ' возвращает правильный ответ. Возможно вы упустили конструкцию "return".');
-            }
+			if (is_null($response)) {
+				throw new \Exception('Убедитесь, что экшен "'.$route->getActionName().'" в контроллере "'.$route->getControllerName().
+				'" возвращает правильный ответ. Возможно вы упустили конструкцию "return".');
+			}
 
-            echo $response;
+			echo $response;
 
-        } catch (\Exception $error) {
+		} catch (\Exception $error) {
 			// Страница 404-й ошибки
-            echo $this->callAction('Controller\\DefaultController', 'NotFoundAction', null, array('error' => $error));
+			echo $this->callAction('Controller\\DefaultController', 'NotFoundAction', null, array('error' => $error));
 		}
 	}
 

@@ -25,15 +25,15 @@ class DefaultController extends MVC\Controller
 	/**
 	 * Установка/обновление таблиц БД
 	 */
-	public function ormAction()
-	{
-		ob_start();
-        ORM\ORM::updateTables();
-		$content = ob_get_contents();
-		ob_end_clean();
+	// public function ormAction()
+	// {
+	// 	ob_start();
+	// 	ORM\ORM::updateTables();
+	// 	$content = ob_get_contents();
+	// 	ob_end_clean();
 
-		return $this->render('default/orm.twig', array('content' => $content));
-	}
+	// 	return $this->render('default/orm.twig', array('content' => $content));
+	// }
 
 	/**
 	 * Страница 404-й ошибки
