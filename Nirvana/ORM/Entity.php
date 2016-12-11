@@ -53,7 +53,6 @@ class Entity extends ORM
 		}
 
 		// Модификация таблицы
-			echo "\r\n# Обновление полей\r\n";
 		$this->modifyTable();
 	}
 
@@ -73,14 +72,17 @@ class Entity extends ORM
 
 		// Колонки по модели
 		foreach ($columnsM as $name => $properties) {
-			if (!isset($columnsT[$name]) || is_null($columnsT[$name])) { 
+			if (!isset($columnsT[$name]) || is_null($columnsT[$name])) {
 				$alters[] = $this->addColumnSql($name, $this->getTypeColumn($properties));
 			} else {
 				// изменение типа колонки
-				$type = $columnsT[$name]['Type'];
-				if ($columnsT[$name]['Extra'] === 'auto_increment') $type .= ' AUTO_INCREMENT PRIMARY KEY';
+				$type = $columnsT[$name][($this->isPostgres() ? 'data_type' : 'Type')];
+				if (isset($columnsT[$name]['Extra']) && $columnsT[$name]['Extra'] === 'auto_increment') $type .= ' AUTO_INCREMENT PRIMARY KEY';
 
 				if ($this->getTypeColumn($properties) !== $type) {
+					var_dump($type, $this->getTypeColumn($properties));
+					var_dump($columnsT[$name]);
+					
 					if ($this->getTypeColumn($properties) === 'datetime') { 
 						$alters[] = $this->dropColumnSql($name); 
 						$alters[] = $this->addColumnSql($name, $this->getTypeColumn($properties)); 
@@ -93,6 +95,10 @@ class Entity extends ORM
 		}
 
 		$alters = array_merge($alters, $this->getAlterIndex($columnsT, $columnsM));
+
+		if (count($alters)) {
+			echo "\r\n# Обновление полей\r\n";
+		}
 
 		foreach ($alters as $sql) {
 			$res = App::getAdapter()->query($sql);
@@ -111,6 +117,8 @@ class Entity extends ORM
 	private function getAlterIndex($columnsT, $columnsM)
 	{
 		$alters = array();
+
+		if ($this->isPostgres()) return $alters;
 
 		// Колонки по модели
 		foreach ($columnsM as $name => $properties) {
@@ -163,12 +171,29 @@ class Entity extends ORM
 	private function getColumnsByTable()
 	{
 		$columns = array();
-		$result  = $this->query('SHOW COLUMNS FROM ' . $this->getTableName());
+		
+		if ($this->isPostgres()) {
+			$result  = $this->query("SELECT * FROM information_schema.columns WHERE table_name ='{$this->getTableName()}';");
 
-		if (!$result) return;
+			if (!$result) return;
 
-		while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
-			$columns[$row['Field']] = $row;
+			while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
+				// var_dump(array(
+				// 		$row['column_name'],
+				// 		$row['is_nullable'],
+				// 		$row['data_type'],
+				// 	))
+				$columns[$row['column_name']] = $row;
+			}
+		}
+		else {
+			$result  = $this->query('SHOW COLUMNS FROM ' . $this->getTableName());
+
+			if (!$result) return;
+
+			while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
+				$columns[$row['Field']] = $row;
+			}
 		}
 
 		return $columns;
@@ -234,7 +259,8 @@ class Entity extends ORM
 			// AUTO_INCREMENT
 			if (isset($properties['GeneratedValue']) && $properties['GeneratedValue']['strategy'] === 'AUTO') {
 				if ($this->isPostgres()) {
-					return 'SERIAL PRIMARY KEY';
+					//return 'SERIAL PRIMARY KEY';
+					return 'integer';
 				} else {
 					return 'int(' . $ln . ') AUTO_INCREMENT PRIMARY KEY';
 				}
@@ -246,9 +272,14 @@ class Entity extends ORM
 			}
 		}
 
+		// varchar(N)
 		if ($properties['Column']['type'] === 'string') {
 			$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : '250';
-			return 'varchar(' . $ln . ')';
+			if ($this->isPostgres()) {
+				return 'character varying';
+			} else {
+				return 'varchar(' . $ln . ')';
+			}
 		}
 
 		return $properties['Column']['type'];
@@ -287,11 +318,13 @@ class Entity extends ORM
 	 */
 	private function addColumnSql($name, $type)
 	{
+		$table = $this->getTableName();
+
 		if ($this->isPostgres()) {
-			return 'ALTER TABLE ' . $this->getTableName() . ' ADD ' . $name . ' ' . $type;
+			return 'ALTER TABLE ' . $table . ' ADD ' . $name . ' ' . $type;
 		}
 		else {
-			return 'ALTER TABLE `' . $this->getTableName() . '` ADD ' . $name . ' ' . $type;
+			return 'ALTER TABLE `' . $table . '` ADD ' . $name . ' ' . $type;
 		}
 	}
 
@@ -302,7 +335,13 @@ class Entity extends ORM
 	 */
 	private function modifyColumnSql($name, $type)
 	{
-		return 'ALTER TABLE `' . $this->getTableName() . '` MODIFY ' . $name . ' ' . $type;
+		$table = $this->getTableName();
+
+		if ($this->isPostgres()) {
+			return "ALTER TABLE {$table} MODIFY {$name} {$type};";
+		} else {
+			return "ALTER TABLE `{$table}` MODIFY {$name} {$type}";
+		}
 	}
 
 	/**
