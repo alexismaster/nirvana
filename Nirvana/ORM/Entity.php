@@ -1,7 +1,13 @@
 <?php
 /**
  * Cущность, базовый класс (модель данных умеющая сохранять себя в БД)
- *
+ * 
+ * Ключевые слова postgresql
+ * https://www.postgresql.org/docs/8.2/static/sql-keywords-appendix.html
+ * 
+ * Типы данных postgresql
+ * http://postgresql.ru.net/manual/datatype.html
+ * 
  * @category   Nirvana
  * @package    ORM
  * @author     Alexey Jukov <alexismaster@yandex.ru>
@@ -77,6 +83,11 @@ class Entity extends ORM
 			} else {
 				// изменение типа колонки
 				$type = $columnsT[$name][($this->isPostgres() ? 'data_type' : 'Type')];
+
+				if ($this->isPostgres() && isset($columnsT[$name]['character_maximum_length'])) {
+					$type = $type . ' (' . $columnsT[$name]['character_maximum_length'] . ')';
+				}
+
 				if (isset($columnsT[$name]['Extra']) && $columnsT[$name]['Extra'] === 'auto_increment') $type .= ' AUTO_INCREMENT PRIMARY KEY';
 
 				if ($this->getTypeColumn($properties) !== $type) {
@@ -97,7 +108,8 @@ class Entity extends ORM
 		$alters = array_merge($alters, $this->getAlterIndex($columnsT, $columnsM));
 
 		if (count($alters)) {
-			echo "\r\n# Обновление полей\r\n";
+			$table = $this->getTableName();
+			echo "\r\n# Обновление полей таблицы \"{$table}\"\r\n";
 		}
 
 		foreach ($alters as $sql) {
@@ -254,6 +266,22 @@ class Entity extends ORM
 	 */
 	private function getTypeColumn($properties)
 	{
+		if ($this->isPostgres()) {
+			// дата и время (без часового пояса)
+			if ($properties['Column']['type'] === 'timestamp') {
+				return 'timestamp without time zone';
+			}
+			// дата и время, включая часовой пояс
+			if ($properties['Column']['type'] === 'timestamptz') {
+				return 'timestamp with time zone';
+			}
+
+			if ($properties['Column']['type'] === 'char') {
+				$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : 1;
+				return 'character ('.$ln.')';
+			}
+		}
+
 		if ($properties['Column']['type'] === 'integer') {
 			$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : '11';
 			// AUTO_INCREMENT
@@ -276,7 +304,7 @@ class Entity extends ORM
 		if ($properties['Column']['type'] === 'string') {
 			$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : '250';
 			if ($this->isPostgres()) {
-				return 'character varying';
+				return 'character varying (' . $ln . ')';
 			} else {
 				return 'varchar(' . $ln . ')';
 			}
@@ -296,7 +324,7 @@ class Entity extends ORM
 	{
 		// Adapter::DEFAULT_CHARSET
 		if ($this->isPostgres()) {
-			return "CREATE TABLE $name (\r\n$columnsSQL\r\n);";
+			return "CREATE TABLE \"$name\" (\r\n$columnsSQL\r\n);";
 		}
 
 		return "CREATE TABLE `$name` (\r\n$columnsSQL\r\n) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
@@ -308,10 +336,19 @@ class Entity extends ORM
 	 */
 	private function dropColumnSql($name)
 	{
-		return 'ALTER TABLE `' . $this->getTableName() . '` DROP COLUMN ' . $name;
+		$table = $this->getTableName();
+
+		if ($this->isPostgres()) {
+			return "ALTER TABLE \"{$table}\" DROP COLUMN \"{$name}\"";
+		} else {
+			//return 'ALTER TABLE `' . $this->getTableName() . '` DROP COLUMN ' . $name;
+			return "ALTER TABLE `{$table}` DROP COLUMN `{$name}`";
+		}
 	}
 
 	/**
+	 * Добавление колонки в таблицу
+	 * 
 	 * @param $name
 	 * @param $type
 	 * @return string
@@ -321,7 +358,7 @@ class Entity extends ORM
 		$table = $this->getTableName();
 
 		if ($this->isPostgres()) {
-			return 'ALTER TABLE ' . $table . ' ADD ' . $name . ' ' . $type;
+			return 'ALTER TABLE "' . $table . '" ADD "' . $name . '" ' . $type;
 		}
 		else {
 			return 'ALTER TABLE `' . $table . '` ADD ' . $name . ' ' . $type;
@@ -329,6 +366,9 @@ class Entity extends ORM
 	}
 
 	/**
+	 * Изменение типа колонки (не учитывает изменение значения по умолчанию)
+	 * 
+	 * 
 	 * @param $name
 	 * @param $type
 	 * @return string
@@ -338,8 +378,13 @@ class Entity extends ORM
 		$table = $this->getTableName();
 
 		if ($this->isPostgres()) {
-			return "ALTER TABLE {$table} MODIFY {$name} {$type};";
+			if ($type === "uuid") {
+				return "ALTER TABLE \"{$table}\" ALTER COLUMN \"{$name}\" TYPE {$type} USING uuid::uuid;";
+			} else {
+				return "ALTER TABLE \"{$table}\" ALTER COLUMN \"{$name}\" TYPE {$type};";
+			}
 		} else {
+			// uuid - аналог!!!!!!
 			return "ALTER TABLE `{$table}` MODIFY {$name} {$type}";
 		}
 	}
