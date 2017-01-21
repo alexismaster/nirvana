@@ -176,9 +176,9 @@ class Repository extends ORM
 		$resArr = array();
 		$classN = '\\Src\\Entity\\' . $this->entityClassName;
 
-        if ($this->moduleName) {
-            $classN = '\\Src\\Module\\' . $this->moduleName . 'Module\\Entity\\' . $this->entityClassName;
-        }
+		if ($this->moduleName) {
+			$classN = '\\Src\\Module\\' . $this->moduleName . 'Module\\Entity\\' . $this->entityClassName;
+		}
 
 		while ($line = $result->fetch(\PDO::FETCH_ASSOC)) {
 			$entity = new $classN();

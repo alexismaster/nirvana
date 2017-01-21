@@ -26,7 +26,8 @@ class Entity extends ORM
 	 */
 	private function isPostgres()
 	{
-		return (App::getConfigSection('DB')['TYPE'] === 'postgres');
+		$DB = App::getConfigSection('DB');
+		return (isset($DB['TYPE']) && $DB['TYPE'] === 'postgres');
 	}
 
 	/**
@@ -62,6 +63,67 @@ class Entity extends ORM
 		$this->modifyTable();
 	}
 
+	// NOT NULL;
+	// NOT NULL DEFAULT '10'; !!!!
+	// 
+	// NULL DEFAULT '10';
+	// NULL; === NULL DEFAULT NULL;
+
+
+	private function getDefaultByTable($table)
+	{
+		$result;
+
+		if ($table['Null'] === 'YES') {
+			if (!isset($table['Default']) || is_null($table['Default'])) {
+				$result = "NULL DEFAULT NULL";
+			} else {
+				$result = "NULL DEFAULT {$table['Default']}";
+			}
+		} else {
+			if (!isset($table['Default']) || is_null($table['Default'])) {
+				$result = "NOT NULL";
+			} else {
+				$result = "NOT NULL DEFAULT {$table['Default']}";
+			}
+		}
+
+		return " " . $result;
+	}
+
+// array(2) {
+//   ["type"]=>
+//   string(7) "integer"
+//   ["default"]=>
+//   string(4) "NULL"
+// }
+
+	private function getDefaultByModel($model)
+	{
+		$result;
+
+		if (isset($model['GeneratedValue'])) {
+			return " NOT NULL";
+		}
+
+		// По дефолту все required=false
+		if (!isset($model['Column']['required']) || $model['Column']['required'] === "false") {
+			if (!isset($model['Column']['default']) || $model['Column']['default'] === "NULL") {
+				$result = "NULL DEFAULT NULL";
+			} else {
+				$result = "NULL DEFAULT {$model['Column']['default']}";
+			}
+		} else {
+			if (!isset($model['Column']['default']) || $model['Column']['default'] === "NULL") {
+				$result = "NOT NULL";
+			} else {
+				$result = "NOT NULL DEFAULT {$model['Column']['default']}";
+			}
+		}
+
+		return " " . $result;
+	}
+
 	/**
 	 * Подстройка таблицы под модель
 	 */
@@ -90,16 +152,27 @@ class Entity extends ORM
 
 				if (isset($columnsT[$name]['Extra']) && $columnsT[$name]['Extra'] === 'auto_increment') $type .= ' AUTO_INCREMENT PRIMARY KEY';
 
-				if ($this->getTypeColumn($properties) !== $type) {
-					var_dump($type, $this->getTypeColumn($properties));
-					var_dump($columnsT[$name]);
+				// Значение по умолчанию
+				$defaultT = $this->getDefaultByTable($columnsT[$name]);
+				$defaultM = $this->getDefaultByModel($properties);
+
+
+				// Если типы по БД и по модели различаются
+				if ($this->getTypeColumn($properties) !== $type || $defaultT !== $defaultM) {
+					echo "<b>{$this->getTableName()}.{$name}</b>\r\n";
+					echo "<b>model: {$this->getTypeColumn($properties)}</b>\r\n";
+					echo "<b>table: {$type}</b>\r\n";
+					// var_dump($defaultT, $defaultM);
+					// var_dump($properties);
+					// echo "<br>";
+					// echo "<br>";
 					
 					if ($this->getTypeColumn($properties) === 'datetime') { 
 						$alters[] = $this->dropColumnSql($name); 
-						$alters[] = $this->addColumnSql($name, $this->getTypeColumn($properties)); 
+						$alters[] = $this->addColumnSql($name, $this->getTypeColumn($properties)) . $defaultM; 
 					} 
 					else { 
-						$alters[] = $this->modifyColumnSql($name, $this->getTypeColumn($properties)); 
+						$alters[] = $this->modifyColumnSql($name, $this->getTypeColumn($properties)) . $defaultM; 
 					} 
 				}
 			}
@@ -226,7 +299,7 @@ class Entity extends ORM
 		foreach ($fragments[1] as $commentFragment) {
 			$options = preg_replace_callback('/^([a-z]+)(\\((.*)\\))?/i', function ($matches) {
 				if (isset($matches[3])) {
-					preg_match_all('/([a-z]+)="?([a-z0-9]+)/i', $matches[3], $matches2);
+					preg_match_all('/([a-z]+)="?([a-z0-9_]+ ?[a-z0-9_]*)/i', $matches[3], $matches2);
 					$res = array_combine($matches2[1], $matches2[2]);
 				} else {
 					$res = array();
@@ -260,29 +333,54 @@ class Entity extends ORM
 
 	/**
 	 * Возвращает тип колонки по комментариям в модели
-	 *
+	 * 
+	 * 
+	 * http://artemfedorov.ru/etc/mysql/field-types/
+	 * 
 	 * @param $properties
 	 * @return string
 	 */
 	private function getTypeColumn($properties)
 	{
+		$type = $properties['Column']['type'];
+		
 		if ($this->isPostgres()) {
 			// дата и время (без часового пояса)
-			if ($properties['Column']['type'] === 'timestamp') {
+			if ($type === 'timestamp') {
 				return 'timestamp without time zone';
 			}
 			// дата и время, включая часовой пояс
-			if ($properties['Column']['type'] === 'timestamptz') {
+			if ($type === 'timestamptz') {
 				return 'timestamp with time zone';
 			}
 
-			if ($properties['Column']['type'] === 'char') {
+			if ($type === 'char') {
 				$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : 1;
 				return 'character ('.$ln.')';
 			}
 		}
+		// MySQL
+		else {
+			if ($type === 'uuid') {
+				return 'varchar(18)';
+			}
+			if ($type === 'json') {
+				return 'text';
+			}
+			if ($type === 'bigint') {
+				return 'bigint(20)';
+			}
+			if ($type === 'bigint unsigned') {
+				return 'bigint(20) unsigned';
+			}
+			// Строка фиксированной длины
+			if ($type === 'char') {
+				$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : 1;
+				return 'char('.$ln.')';
+			}
+		}
 
-		if ($properties['Column']['type'] === 'integer') {
+		if ($type === 'integer') {
 			$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : '11';
 			// AUTO_INCREMENT
 			if (isset($properties['GeneratedValue']) && $properties['GeneratedValue']['strategy'] === 'AUTO') {
@@ -301,7 +399,7 @@ class Entity extends ORM
 		}
 
 		// varchar(N)
-		if ($properties['Column']['type'] === 'string') {
+		if ($type === 'string') {
 			$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : '250';
 			if ($this->isPostgres()) {
 				return 'character varying (' . $ln . ')';
@@ -310,7 +408,7 @@ class Entity extends ORM
 			}
 		}
 
-		return $properties['Column']['type'];
+		return $type;
 	}
 
 	/**
@@ -472,12 +570,9 @@ class Entity extends ORM
 	 */
 	private $saved = false;
 
-	/**
-	 * Сохранение сущности в БД в БД
-	 */
-	public function save()
+	public function saveQueryString()
 	{
-		$names = array();
+		$names  = array();
 		$values = array();
 
 		foreach ($this->getColumnsByModel() as $name => $options) {
@@ -487,20 +582,32 @@ class Entity extends ORM
 
 			$names[] = $name;
 
+			$val = $this->$name;
+			$val = (is_null($val) && isset($options['Column']['default'])) ? $options['Column']['default'] : $val;
+			$val = (is_null($val)) ? "NULL" : $val;
+
 			if ($options['Column']['type'] !== 'string' && $options['Column']['type'] !== 'text' && $options['Column']['type'] !== 'datetime') {
-				$values[] = $this->$name;
+				$values[] = $val;
 			} else {
-				$values[] = "'" . $this->$name . "'";
+				$values[] = ($val === "NULL") ? $val : "'" . $this->$name . "'";
 			}
 		}
 
-		$table = $this->getTableName();
-		$names = implode(', ', $names);
+		//var_dump($values);
+		$table  = $this->getTableName();
+		$names  = implode(', ', $names);
 		$values = implode(', ', $values);
+		
+		return "INSERT INTO {$table} ($names) VALUES ($values)";
+	}
 
+	/**
+	 * Сохранение сущности в БД в БД
+	 */
+	public function save()
+	{
 		$mysql = App::getAdapter();
-		$sql = "INSERT INTO {$table} ($names) VALUES ($values)";
-		$res = $mysql->query($sql);
+		$res = $mysql->query($this->saveQueryString());
 
 		if ($res) {
 			$this->saved = true;

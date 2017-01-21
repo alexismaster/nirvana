@@ -91,6 +91,8 @@ class Application
 	 */
 	public function callAction($controllerName, $actionName, $moduleName, $params)
 	{
+
+
 		if ($moduleName) {
 			$controllerName = "\\Src\\Module\\$controllerName";
 		}
@@ -116,14 +118,14 @@ class Application
 					$param = new ReflectionParameter(array($controllerName, $actionName), $name);
 					// Параметр не является опциональным
 					if (!$param->isOptional()) {
-						throw new \Exception('Параметр "'.$name.'" является обязательным. Экшен: '.$actionName);
+						throw new \Exception('Параметр "' . $name . '" является обязательным. Экшен: ' . $actionName);
 					}
 				}
 			}
 
 			$data = call_user_func_array(array($module, $actionName), $params);
 		} else {
-			throw new \Exception('Экшен "'.$actionName.'" не найден. Контроллер  "'.$controllerName.'".');
+			throw new \Exception('Экшен "' . $actionName . '" не найден. Контроллер  "' . $controllerName . '"');
 		}
 
 		return $data;
@@ -183,7 +185,7 @@ class Application
 	 * @param $debug - Режим отладки
 	 * @throws \Exception
 	 */
-	public function run($debug)
+	public function run($debug, $uri = false)
 	{
 		$this->debug = $debug;
 
@@ -199,11 +201,11 @@ class Application
 
 			// Перехват исключений
 			set_error_handler(function ($severity, $message, $filename, $lineNo) {
-				echo $message;
-				return;
+			echo $message;
+			return;
 			});
 
-			$route = $this->initRouter()->getRoute();  // Маршрут соответствующий текущему URL
+			$route = $this->initRouter($uri)->getRoute();  // Маршрут соответствующий текущему URL
 
 			if (!$route) {
 				$route = $this->router->getAutoRoute();
@@ -214,11 +216,11 @@ class Application
 			}
 
 			// Запуск экшена
-			$response = $this->callAction($route->getControllerName(), $route->getActionName(), $route->getModuleName(), $route->getParams());
+			$response = $this->callAction($route->getControllerName(), $route->getActionName(), $route->getModuleName(), $route->getParams($uri));
 
 			if (is_null($response)) {
-				throw new \Exception('Убедитесь, что экшен "'.$route->getActionName().'" в контроллере "'.$route->getControllerName().
-				'" возвращает правильный ответ. Возможно вы упустили конструкцию "return".');
+				throw new \Exception('Убедитесь что констроллер '  . $route->getControllerName() .
+				' возвращает правильный ответ. Возможно вы упустили конструкцию "return".');
 			}
 
 			echo $response;
@@ -234,9 +236,9 @@ class Application
 	 *
 	 * @return Router
 	 */
-	public function initRouter()
+	public function initRouter($uri)
 	{
-		$this->router = new MVC\Router();
+		$this->router = new MVC\Router($uri);
 
 		// Маршруты основного приложения и модулей
 		foreach ($this->config['ROUTER'] as $name => $route) {

@@ -53,7 +53,7 @@ class Adapter
 		}
 
 		try {
-			if ($config['TYPE'] === 'mysql') {
+			if (isset($config['TYPE']) && $config['TYPE'] === 'mysql') {
 				$dsn = 'mysql:host=' . $config['MYSQL_HOST'] .
 								';port='     . $config['MYSQL_PORT'] .
 								';dbname='   . $config['MYSQL_BASE'] .
@@ -61,7 +61,7 @@ class Adapter
 
 				$this->pdo = new \PDO($dsn, $config['MYSQL_USER'], $config['MYSQL_PASS']);
 			}
-			elseif ($config['TYPE'] === 'postgres') {
+			elseif (isset($config['TYPE']) && $config['TYPE'] === 'postgres') {
 				$dsn = 'pgsql:dbname='.$config['PG_BASE'].' host='.$config['PG_HOST'];
 				$this->pdo = new \PDO($dsn, $config['PG_USER'], $config['PG_PASS']);
 			}

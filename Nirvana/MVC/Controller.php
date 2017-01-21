@@ -55,30 +55,30 @@ class Controller
 		return true;
 	}
 
-    /**
-     * Рендерит шаблон
-     *
-     * @param $name - Имя шаблона
-     * @param array $data - Параметры передаваемые в шаблон
-     * @param null $path - Путь к папке с шаблонами
-     * @return string
-     * @throws \Exception
-     */
+	/**
+	 * Рендерит шаблон
+	 *
+	 * @param $name - Имя шаблона
+	 * @param array $data - Параметры передаваемые в шаблон
+	 * @param null $path - Путь к папке с шаблонами
+	 * @return string
+	 * @throws \Exception
+	 */
 	public function render($name, $data = array(), $path = null)
 	{
 		try {
 			$loader = new \Twig_Loader_Filesystem();
-      $loader->addPath('Src/views');              // Основная папка с шаблонами
+			$loader->addPath('Src/views');              // Основная папка с шаблонами
 
-      // Шаблоны модуля
-      if ($this->moduleName) {
-        $loader->prependPath('Src/Module/' . $this->moduleName . '/views');
-      }
+			// Шаблоны модуля
+			if ($this->moduleName) {
+				$loader->prependPath('Src/Module/' . $this->moduleName . '/views');
+			}
 
-      // Пользовательская папка шаблонов
-      if ($path) {
-        $loader->prependPath($path);
-      }
+			// Пользовательская папка шаблонов
+			if ($path) {
+				$loader->prependPath($path);
+			}
 
 			$this->twig = new \Twig_Environment($loader);
 			if (isset($_SESSION)) $this->twig->addGlobal('session', $_SESSION);
@@ -91,7 +91,7 @@ class Controller
 
 			return $this->twig->render($name, $data);
 		}
-    catch (\Exception $e) {
+		catch (\Exception $e) {
 			throw new \Exception('Template "' . $name . '" not exists in "' . $path . '"');
 		}
 	}
@@ -120,13 +120,13 @@ class Controller
 		header('Location: ' . $url);
 	}
 
-    /**
-     * Возвращает экземпляр класса Repository для конкретного типа сущности
-     *
-     * @param $entityClassName - Имя класса сущности
-     * @param $moduleName
-     * @return ORM\Repository
-     */
+	/**
+	 * Возвращает экземпляр класса Repository для конкретного типа сущности
+	 *
+	 * @param $entityClassName - Имя класса сущности
+	 * @param $moduleName
+	 * @return ORM\Repository
+	 */
 	public function getRepository($entityClassName, $moduleName = false)
 	{
 		return new ORM\Repository($entityClassName, $moduleName);
