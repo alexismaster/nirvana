@@ -13,6 +13,13 @@
  * @author     Alexey Jukov <alexismaster@yandex.ru>
  */
 
+
+// sudo -u postgres psql
+// \connect office
+// \d+ tablename - структура таблицы
+
+
+
 namespace Nirvana\ORM;
 
 use \Nirvana\MVC\Application as App;
@@ -35,61 +42,88 @@ class Entity extends ORM
 	 */
 	public function updateTable()
 	{
-		$rc = new \ReflectionClass($this->getClass());
-
-		$columnsSQL = array();
-
-		// Комментарии свойств
-		foreach ($rc->getProperties() as $property) {
-			$rp = new \ReflectionProperty($property->class, $property->name);
-			$parameters = $this->columnOptions($rp->getDocComment());
-			if (!isset($parameters['Column'])) continue;
-			$sql = $this->columnSQL($property->name, $parameters);
-			$columnsSQL[] = $sql;
-		}
-
-		// Установка таблицы
-		if (!$this->getColumnsByTable()) {
-			echo "\r\n# Создание таблицы \r\n";
-			$tableSQL = $this->tableSQL($this->getTableName(), implode(",\r\n", $columnsSQL));
-			echo $tableSQL . "\r\n";
-
-			$res = $this->query($tableSQL); // Создание таблицы
-			$row = $res->fetch(\PDO::FETCH_ASSOC);
-			if (!$res) var_dump(mysql_error());
-		}
-
-		// Модификация таблицы
-		$this->modifyTable();
-	}
-
-	// NOT NULL;
-	// NOT NULL DEFAULT '10'; !!!!
-	// 
-	// NULL DEFAULT '10';
-	// NULL; === NULL DEFAULT NULL;
-
-
-	private function getDefaultByTable($table)
-	{
-		$result;
-
-		if ($table['Null'] === 'YES') {
-			if (!isset($table['Default']) || is_null($table['Default'])) {
-				$result = "NULL DEFAULT NULL";
-			} else {
-				$result = "NULL DEFAULT {$table['Default']}";
-			}
+		if ($this->isPostgres()) {
+			$table = new PostgresTable($this->getTableName(), $this->getClass());
 		} else {
-			if (!isset($table['Default']) || is_null($table['Default'])) {
-				$result = "NOT NULL";
-			} else {
-				$result = "NOT NULL DEFAULT {$table['Default']}";
-			}
+			$table = new MysqlTable($this->getTableName(), $this->getClass());
 		}
 
-		return " " . $result;
+		$table->update();
+		//$rc = new \ReflectionClass($this->getClass());
+
+		// $columnsSQL = array();
+
+		// // Комментарии свойств
+		// foreach ($rc->getProperties() as $property) {
+		// 	$rp = new \ReflectionProperty($property->class, $property->name);
+		// 	$parameters = $this->columnOptions($rp->getDocComment());
+		// 	if (!isset($parameters['Column'])) continue;
+		// 	$sql = $this->columnSQL($property->name, $parameters);
+		// 	$columnsSQL[] = $sql;
+		// }
+		
+		// // Установка таблицы
+		// if (!$this->getColumnsByTable()) {
+		// 	echo "\r\n# Создание таблицы \r\n";
+		// 	$tableSQL = $this->tableSQL($this->getTableName(), implode(",\r\n", $columnsSQL));
+		// 	echo $tableSQL . "\r\n";
+
+		// 	$res = $this->query($tableSQL); // Создание таблицы
+		// 	$row = $res->fetch(\PDO::FETCH_ASSOC);
+		// 	if (!$res) var_dump(mysql_error());
+		// }
+
+		// // Модификация таблицы
+		// $this->modifyTable();
 	}
+
+	// /**
+	//  * 
+	//  */
+	// private function getDefaultByTable($table)
+	// {
+	// 	$result;
+
+	// 	if ($this->isPostgres()) {
+	// 		//var_dump($table['is_nullable'] . ' - ' . $table['column_name']);
+	// 		// column_default
+	// 		// is_nullable
+	// 		// data_type
+	// 		if ($table['is_nullable'] === 'YES') {
+	// 			if (!isset($table['column_default']) || is_null($table['column_default'])) {
+	// 				//$result = "NULL DEFAULT NULL";
+	// 				$result = "DEFAULT NULL";
+	// 			} else {
+	// 				//$result = "NULL DEFAULT {$table['column_default']}";
+	// 				$result = "DEFAULT NULL";
+	// 			}
+	// 		} else {
+	// 			if (!isset($table['column_default']) || is_null($table['column_default'])) {
+	// 				$result = "NOT NULL";
+	// 			} else {
+	// 				$result = "NOT NULL DEFAULT {$table['column_default']}";
+	// 			}
+	// 		}
+	// 	}
+	// 	else {
+	// 		if ($table['Null'] === 'YES') {
+	// 			if (!isset($table['Default']) || is_null($table['Default'])) {
+	// 				$result = "NULL DEFAULT NULL";
+	// 			} else {
+	// 				$result = "NULL DEFAULT {$table['Default']}";
+	// 			}
+	// 		} else {
+	// 			if (!isset($table['Default']) || is_null($table['Default'])) {
+	// 				$result = "NOT NULL";
+	// 			} else {
+	// 				$result = "NOT NULL DEFAULT {$table['Default']}";
+	// 			}
+	// 		}
+
+	// 	}
+		
+	// 	return " " . $result;
+	// }
 
 // array(2) {
 //   ["type"]=>
@@ -98,134 +132,176 @@ class Entity extends ORM
 //   string(4) "NULL"
 // }
 
-	private function getDefaultByModel($model)
-	{
-		$result;
+	// private function getDefaultByModel($model)
+	// {
+	// 	$result;
 
-		if (isset($model['GeneratedValue'])) {
-			return " NOT NULL";
-		}
+	// 	if (isset($model['GeneratedValue'])) {
+	// 		return " NOT NULL";
+	// 	}
 
-		// По дефолту все required=false
-		if (!isset($model['Column']['required']) || $model['Column']['required'] === "false") {
-			if (!isset($model['Column']['default']) || $model['Column']['default'] === "NULL") {
-				$result = "NULL DEFAULT NULL";
-			} else {
-				$result = "NULL DEFAULT {$model['Column']['default']}";
-			}
-		} else {
-			if (!isset($model['Column']['default']) || $model['Column']['default'] === "NULL") {
-				$result = "NOT NULL";
-			} else {
-				$result = "NOT NULL DEFAULT {$model['Column']['default']}";
-			}
-		}
+	// 	// По дефолту все required=false
+	// 	if (!isset($model['Column']['required']) || $model['Column']['required'] === "false") {
+	// 		if (!isset($model['Column']['default']) || $model['Column']['default'] === "NULL") {
+	// 			//$result = "NULL DEFAULT NULL";
+				
+	// 			if ($this->isPostgres()) {
+	// 				$result = "DEFAULT NULL";
+	// 			}
+	// 			else {
+	// 				$result = "NULL DEFAULT NULL";
+	// 			}
 
-		return " " . $result;
-	}
+	// 		} else {
+	// 			$result = "NULL DEFAULT {$model['Column']['default']}";
+	// 		}
+	// 	} else {
+	// 		if (!isset($model['Column']['default']) || $model['Column']['default'] === "NULL") {
+	// 			$result = "NOT NULL";
+	// 		} else {
+	// 			$result = "NOT NULL DEFAULT {$model['Column']['default']}";
+	// 		}
+	// 	}
 
-	/**
-	 * Подстройка таблицы под модель
-	 */
-	private function modifyTable()
-	{
-		$alters = array();
-		$columnsT = $this->getColumnsByTable();
-		$columnsM = $this->getColumnsByModel();
+	// 	return " " . $result;
+	// }
 
-		// Колонки по таблице
-		foreach ($columnsT as $name => $properties) if (!isset($columnsM[$name]) || is_null($columnsM[$name])) {
-			$alters[] = $this->dropColumnSql($name);
-		}
+	// /**
+	//  * Подстройка таблицы под модель
+	//  */
+	// private function modifyTable()
+	// {
+	// 	$alters = array();
+	// 	$columnsT = $this->getColumnsByTable();
+	// 	$columnsM = $this->getColumnsByModel();
 
-		// Колонки по модели
-		foreach ($columnsM as $name => $properties) {
-			if (!isset($columnsT[$name]) || is_null($columnsT[$name])) {
-				$alters[] = $this->addColumnSql($name, $this->getTypeColumn($properties));
-			} else {
-				// изменение типа колонки
-				$type = $columnsT[$name][($this->isPostgres() ? 'data_type' : 'Type')];
+	// 	// Колонки по таблице
+	// 	foreach ($columnsT as $name => $properties) if (!isset($columnsM[$name]) || is_null($columnsM[$name])) {
+	// 		$alters[] = $this->dropColumnSql($name);
+	// 	}
 
-				if ($this->isPostgres() && isset($columnsT[$name]['character_maximum_length'])) {
-					$type = $type . ' (' . $columnsT[$name]['character_maximum_length'] . ')';
-				}
+	// 	// Колонки по модели
+	// 	foreach ($columnsM as $name => $properties) {
+	// 		if (!isset($columnsT[$name]) || is_null($columnsT[$name])) {
+	// 			$alters[] = $this->addColumnSql($name, $this->getTypeColumn($properties));
+	// 		} else {
+	// 			// изменение типа колонки
+	// 			$type = $columnsT[$name][($this->isPostgres() ? 'data_type' : 'Type')];
 
-				if (isset($columnsT[$name]['Extra']) && $columnsT[$name]['Extra'] === 'auto_increment') $type .= ' AUTO_INCREMENT PRIMARY KEY';
+	// 			if ($this->isPostgres() && isset($columnsT[$name]['character_maximum_length'])) {
+	// 				$type = $type . ' (' . $columnsT[$name]['character_maximum_length'] . ')';
+	// 			}
 
-				// Значение по умолчанию
-				$defaultT = $this->getDefaultByTable($columnsT[$name]);
-				$defaultM = $this->getDefaultByModel($properties);
+	// 			if (isset($columnsT[$name]['Extra']) && $columnsT[$name]['Extra'] === 'auto_increment') $type .= ' AUTO_INCREMENT PRIMARY KEY';
+
+	// 			// Значение по умолчанию
+	// 			$defaultT = $this->getDefaultByTable($columnsT[$name]);
+	// 			// var_dump($columnsT[$name]);
+	// 			// var_dump("----------------");
+	// 			// break;
+	// 			$defaultM = $this->getDefaultByModel($properties);
 
 
-				// Если типы по БД и по модели различаются
-				if ($this->getTypeColumn($properties) !== $type || $defaultT !== $defaultM) {
-					echo "<b>{$this->getTableName()}.{$name}</b>\r\n";
-					echo "<b>model: {$this->getTypeColumn($properties)}</b>\r\n";
-					echo "<b>table: {$type}</b>\r\n";
-					// var_dump($defaultT, $defaultM);
-					// var_dump($properties);
-					// echo "<br>";
-					// echo "<br>";
+	// 			// Если типы по БД и по модели различаются
+	// 			if ($this->getTypeColumn($properties) !== $type || $defaultT !== $defaultM) {
+	// 				echo "<b>{$this->getTableName()}.{$name}</b>\r\n";
+	// 				echo "<b>model: {$this->getTypeColumn($properties)}</b>\r\n";
+	// 				echo "<b>table: {$type}</b>\r\n";
+	// 				echo "default model:" . $defaultM . "</b>\r\n";
+	// 				echo "default table:" . $defaultT . "</b>\r\n";
+	// 				// var_dump($defaultT, $defaultM);
+	// 				// var_dump($properties);
+	// 				// echo "<br>";
+	// 				// echo "<br>";
 					
-					if ($this->getTypeColumn($properties) === 'datetime') { 
-						$alters[] = $this->dropColumnSql($name); 
-						$alters[] = $this->addColumnSql($name, $this->getTypeColumn($properties)) . $defaultM; 
-					} 
-					else { 
-						$alters[] = $this->modifyColumnSql($name, $this->getTypeColumn($properties)) . $defaultM; 
-					} 
-				}
-			}
-		}
+	// 				if ($this->getTypeColumn($properties) === 'datetime') {
+	// 					$dropQueru = $this->dropColumnSql($name);
+	// 					$addQuery  = $this->addColumnSql($name, $this->getTypeColumn($properties)) . $defaultM;
+	// 					$alters[]  = $dropQueru;
+	// 					$alters[]  = $addQuery;
+	// 					echo "dropQueru: " . $dropQueru . "</b>\r\n";
+	// 					echo "addQuery: " . $addQuery . "</b>\r\n";
+	// 				} 
+	// 				else {
+	// 					// Тип не отличается && isPostgres
+	// 					if ($this->isPostgres() && $this->getTypeColumn($properties) === $type) {
+	// 						// Удаление атрибута NOT NULL
+	// 						if ($defaultM === ' DEFAULT NULL') {
+	// 							$modifyQuery = "ALTER TABLE \"{$this->getTableName()}\" ALTER COLUMN \"{$name}\" DROP NOT NULL;";
+	// 							$alters[] = $modifyQuery;
+	// 							echo "modifyQuery: " . $modifyQuery . "</b>\r\n";
+	// 						}
+	// 						$modifyQuery = "ALTER TABLE \"{$this->getTableName()}\" ALTER COLUMN \"{$name}\" SET" . $defaultM . ";";
+	// 					}
+	// 					// mysql
+	// 					else {
+	// 						$modifyQuery = $this->modifyColumnSql($name, $this->getTypeColumn($properties)) . $defaultM;
+	// 					}
+	// 					$alters[] = $modifyQuery;
+	// 					echo "modifyQuery: " . $modifyQuery . "</b>\r\n";
+	// 				} 
+	// 				echo "-------------------</b>\r\n";
+	// 			}
+	// 		}
+	// 		//break; // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// 	}
 
-		$alters = array_merge($alters, $this->getAlterIndex($columnsT, $columnsM));
+	// 	//return; // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-		if (count($alters)) {
-			$table = $this->getTableName();
-			echo "\r\n# Обновление полей таблицы \"{$table}\"\r\n";
-		}
+	// 	$alters = array_merge($alters, $this->getAlterIndex($columnsT, $columnsM));
 
-		foreach ($alters as $sql) {
-			$res = App::getAdapter()->query($sql);
-			echo "<font>$sql</font>\r\n";
-			if (!$res) echo '<div>' . mysql_error() . '</div>';
-		}
-	}
+	// 	if (count($alters)) {
+	// 		$table = $this->getTableName();
+	// 		//echo "\r\n# Обновление полей таблицы \"{$table}\"\r\n";
+	// 	}
 
-	/**
-	 * Возвращает массив инструкций "ALTER TABLE" для создания уникальных индексов
-	 *
-	 * @param $columnsT - Данные полученные из БД (SHOW COLUMNS FROM...)
-	 * @param $columnsM - Данные полученные по модели (Парсинг комментариев)
-	 * @return array
-	 */
-	private function getAlterIndex($columnsT, $columnsM)
-	{
-		$alters = array();
+	// 	foreach ($alters as $sql) {
+	// 		$res = App::getAdapter()->query($sql);
+	// 		//var_dump($res);
+	// 		//echo "<font>$sql</font>\r\n";
+	// 		if ($this->isPostgres()) {
+	// 			//
+	// 		}
+	// 		else {
+	// 			if (!$res) echo '<div>' . mysql_error() . '</div>';
+	// 		}
+	// 	}
+	// }
 
-		if ($this->isPostgres()) return $alters;
+	// /**
+	//  * Возвращает массив инструкций "ALTER TABLE" для создания уникальных индексов
+	//  *
+	//  * @param $columnsT - Данные полученные из БД (SHOW COLUMNS FROM...)
+	//  * @param $columnsM - Данные полученные по модели (Парсинг комментариев)
+	//  * @return array
+	//  */
+	// private function getAlterIndex($columnsT, $columnsM)
+	// {
+	// 	$alters = array();
 
-		// Колонки по модели
-		foreach ($columnsM as $name => $properties) {
-			if (!isset($columnsT[$name])) $columnsT[$name] = array();
+	// 	if ($this->isPostgres()) return $alters;
+
+	// 	// Колонки по модели
+	// 	foreach ($columnsM as $name => $properties) {
+	// 		if (!isset($columnsT[$name])) $columnsT[$name] = array();
 			
-			// Создание уникального индекса
-			if (isset($properties['Column']['unique']) && $properties['Column']['unique'] == 'true' &&
-				$columnsT[$name] && $columnsT[$name]['Key'] != 'UNI'
-			) {
-				$alters[] = "ALTER TABLE `{$this->getTableName()}` ADD UNIQUE INDEX `$name` (`$name`);";
-			}
+	// 		// Создание уникального индекса
+	// 		if (isset($properties['Column']['unique']) && $properties['Column']['unique'] == 'true' &&
+	// 			$columnsT[$name] && $columnsT[$name]['Key'] != 'UNI'
+	// 		) {
+	// 			$alters[] = "ALTER TABLE `{$this->getTableName()}` ADD UNIQUE INDEX `$name` (`$name`);";
+	// 		}
 
-			// Удаление уникального индекса
-			if ($columnsT[$name] && $columnsT[$name]['Key'] === 'UNI' and (!isset($properties['Column']['unique']) ||
-					$properties['Column']['unique'] != 'true')
-			) {
-				$alters[] = "ALTER TABLE `{$this->getTableName()}` DROP INDEX `$name`;";
-			}
-		}
+	// 		// Удаление уникального индекса
+	// 		if ($columnsT[$name] && $columnsT[$name]['Key'] === 'UNI' and (!isset($properties['Column']['unique']) ||
+	// 				$properties['Column']['unique'] != 'true')
+	// 		) {
+	// 			$alters[] = "ALTER TABLE `{$this->getTableName()}` DROP INDEX `$name`;";
+	// 		}
+	// 	}
 
-		return $alters;
-	}
+	// 	return $alters;
+	// }
 
 	/**
 	 * Возвращает параметры для колонок таблицы основвываясь на модели
@@ -248,244 +324,249 @@ class Entity extends ORM
 		return $result;
 	}
 
-	/**
-	 * Возвращает параметры для колонок таблицы основвываясьна структуре таблицы
-	 *
-	 * @return array
-	 */
-	private function getColumnsByTable()
-	{
-		$columns = array();
+	// /**
+	//  * Возвращает параметры для колонок таблицы основвываясьна структуре таблицы
+	//  *
+	//  * @return array
+	//  */
+	// private function getColumnsByTable()
+	// {
+	// 	$columns = array();
 		
-		if ($this->isPostgres()) {
-			$result  = $this->query("SELECT * FROM information_schema.columns WHERE table_name ='{$this->getTableName()}';");
+	// 	if ($this->isPostgres()) {
+	// 		$result  = $this->query("SELECT * FROM information_schema.columns WHERE table_name ='{$this->getTableName()}';");
 
-			if (!$result) return;
+	// 		if (!$result) return;
 
-			while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
-				// var_dump(array(
-				// 		$row['column_name'],
-				// 		$row['is_nullable'],
-				// 		$row['data_type'],
-				// 	))
-				$columns[$row['column_name']] = $row;
-			}
-		}
-		else {
-			$result  = $this->query('SHOW COLUMNS FROM ' . $this->getTableName());
+	// 		while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
+	// 			// var_dump(array(
+	// 			// 		$row['column_name'],
+	// 			// 		$row['is_nullable'],
+	// 			// 		$row['data_type'],
+	// 			// 	))
+	// 			$columns[$row['column_name']] = $row;
+	// 		}
+	// 	}
+	// 	else {
+	// 		$result  = $this->query('SHOW COLUMNS FROM ' . $this->getTableName());
 
-			if (!$result) return;
+	// 		if (!$result) return;
 
-			while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
-				$columns[$row['Field']] = $row;
-			}
-		}
+	// 		while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
+	// 			$columns[$row['Field']] = $row;
+	// 		}
+	// 	}
 
-		return $columns;
-	}
+	// 	return $columns;
+	// }
 
-	/**
-	 * Парсит комментарий к свойству
-	 *
-	 * @param $comment - Комментарий
-	 * @return array
-	 */
-	private function columnOptions($comment)
-	{
-		$result = array();
-		preg_match_all('/@ORM\\\(.*)/', $comment, $fragments);
+	// /**
+	//  * Парсит комментарий к свойству
+	//  *
+	//  * @param $comment - Комментарий
+	//  * @return array
+	//  */
+	// private function columnOptions($comment)
+	// {
+	// 	$result = array();
+	// 	preg_match_all('/@ORM\\\(.*)/', $comment, $fragments);
 
-		// Фрагменты комментария к свойству класаа (т.е. строки вида @ORM\Column(type="string", length=100))
-		foreach ($fragments[1] as $commentFragment) {
-			$options = preg_replace_callback('/^([a-z]+)(\\((.*)\\))?/i', function ($matches) {
-				if (isset($matches[3])) {
-					preg_match_all('/([a-z]+)="?([a-z0-9_]+ ?[a-z0-9_]*)/i', $matches[3], $matches2);
-					$res = array_combine($matches2[1], $matches2[2]);
-				} else {
-					$res = array();
-				}
-				return json_encode(array('type' => $matches[1], 'parameters' => $res));
-			}, $commentFragment);
+	// 	// Фрагменты комментария к свойству класаа (т.е. строки вида @ORM\Column(type="string", length=100))
+	// 	foreach ($fragments[1] as $commentFragment) {
+	// 		$options = preg_replace_callback('/^([a-z]+)(\\((.*)\\))?/i', function ($matches) {
+	// 			if (isset($matches[3])) {
+	// 				preg_match_all('/([a-z]+)="?([a-z0-9_]+ ?[a-z0-9_]*)/i', $matches[3], $matches2);
+	// 				$res = array_combine($matches2[1], $matches2[2]);
+	// 			} else {
+	// 				$res = array();
+	// 			}
+	// 			return json_encode(array('type' => $matches[1], 'parameters' => $res));
+	// 		}, $commentFragment);
 
-			$options = json_decode($options, true);
-			$result[$options['type']] = $options['parameters'];
-		}
+	// 		$options = json_decode($options, true);
+	// 		$result[$options['type']] = $options['parameters'];
+	// 	}
 
-		return $result;
-	}
+	// 	return $result;
+	// }
 
-	/**
-	 * Возвращает часть запроса CREATE TABLE для конкретного столбца
-	 * @param $name
-	 * @param $parameters
-	 * @return string
-	 */
-	private function columnSQL($name, $parameters)
-	{
-		$type = $this->getTypeColumn($parameters);
+	// /**
+	//  * Возвращает часть запроса CREATE TABLE для конкретного столбца
+	//  * @param $name
+	//  * @param $parameters
+	//  * @return string
+	//  */
+	// private function columnSQL($name, $parameters)
+	// {
+	// 	$type = $this->getTypeColumn($parameters);
 		
-		if ($this->isPostgres()) {
-			return "\t$name $type NOT NULL";
-		}
+	// 	if ($this->isPostgres()) {
+	// 		return "\t$name $type NOT NULL";
+	// 	}
 
-		return "\t`$name` $type NOT NULL";
-	}
+	// 	return "\t`$name` $type NOT NULL";
+	// }
 
-	/**
-	 * Возвращает тип колонки по комментариям в модели
-	 * 
-	 * 
-	 * http://artemfedorov.ru/etc/mysql/field-types/
-	 * 
-	 * @param $properties
-	 * @return string
-	 */
-	private function getTypeColumn($properties)
-	{
-		$type = $properties['Column']['type'];
+	// /**
+	//  * Возвращает тип колонки по комментариям в модели
+	//  * 
+	//  * 
+	//  * http://artemfedorov.ru/etc/mysql/field-types/
+	//  * 
+	//  * @param $properties
+	//  * @return string
+	//  */
+	// private function getTypeColumn($properties)
+	// {
+	// 	$type = $properties['Column']['type'];
+	// 	//var_dump($type);
 		
-		if ($this->isPostgres()) {
-			// дата и время (без часового пояса)
-			if ($type === 'timestamp') {
-				return 'timestamp without time zone';
-			}
-			// дата и время, включая часовой пояс
-			if ($type === 'timestamptz') {
-				return 'timestamp with time zone';
-			}
+	// 	if ($this->isPostgres()) {
+	// 		// дата и время (без часового пояса)
+	// 		if ($type === 'timestamp') {
+	// 			return 'timestamp without time zone';
+	// 		}
+	// 		// дата и время, включая часовой пояс
+	// 		if ($type === 'timestamptz') {
+	// 			return 'timestamp with time zone';
+	// 		}
 
-			if ($type === 'char') {
-				$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : 1;
-				return 'character ('.$ln.')';
-			}
-		}
-		// MySQL
-		else {
-			if ($type === 'uuid') {
-				return 'varchar(18)';
-			}
-			if ($type === 'json') {
-				return 'text';
-			}
-			if ($type === 'bigint') {
-				return 'bigint(20)';
-			}
-			if ($type === 'bigint unsigned') {
-				return 'bigint(20) unsigned';
-			}
-			// Строка фиксированной длины
-			if ($type === 'char') {
-				$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : 1;
-				return 'char('.$ln.')';
-			}
-		}
+	// 		if ($type === 'char') {
+	// 			$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : 1;
+	// 			return 'character ('.$ln.')';
+	// 		}
 
-		if ($type === 'integer') {
-			$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : '11';
-			// AUTO_INCREMENT
-			if (isset($properties['GeneratedValue']) && $properties['GeneratedValue']['strategy'] === 'AUTO') {
-				if ($this->isPostgres()) {
-					//return 'SERIAL PRIMARY KEY';
-					return 'integer';
-				} else {
-					return 'int(' . $ln . ') AUTO_INCREMENT PRIMARY KEY';
-				}
-			}
-			if ($this->isPostgres()) {
-				return 'integer';
-			} else {
-				return 'int(' . $ln . ')';
-			}
-		}
+	// 		if ($type === 'bigint unsigned') {
+	// 			return 'bigint';
+	// 		}
+	// 	}
+	// 	// MySQL
+	// 	else {
+	// 		if ($type === 'uuid') {
+	// 			return 'varchar(18)';
+	// 		}
+	// 		if ($type === 'json') {
+	// 			return 'text';
+	// 		}
+	// 		if ($type === 'bigint') {
+	// 			return 'bigint(20)';
+	// 		}
+	// 		if ($type === 'bigint unsigned') {
+	// 			return 'bigint(20) unsigned';
+	// 		}
+	// 		// Строка фиксированной длины
+	// 		if ($type === 'char') {
+	// 			$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : 1;
+	// 			return 'char('.$ln.')';
+	// 		}
+	// 	}
 
-		// varchar(N)
-		if ($type === 'string') {
-			$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : '250';
-			if ($this->isPostgres()) {
-				return 'character varying (' . $ln . ')';
-			} else {
-				return 'varchar(' . $ln . ')';
-			}
-		}
+	// 	if ($type === 'integer') {
+	// 		$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : '11';
+	// 		// AUTO_INCREMENT
+	// 		if (isset($properties['GeneratedValue']) && $properties['GeneratedValue']['strategy'] === 'AUTO') {
+	// 			if ($this->isPostgres()) {
+	// 				//return 'SERIAL PRIMARY KEY';
+	// 				return 'integer';
+	// 			} else {
+	// 				return 'int(' . $ln . ') AUTO_INCREMENT PRIMARY KEY';
+	// 			}
+	// 		}
+	// 		if ($this->isPostgres()) {
+	// 			return 'integer';
+	// 		} else {
+	// 			return 'int(' . $ln . ')';
+	// 		}
+	// 	}
 
-		return $type;
-	}
+	// 	// varchar(N)
+	// 	if ($type === 'string') {
+	// 		$ln = (isset($properties['Column']['length'])) ? $properties['Column']['length'] : '250';
+	// 		if ($this->isPostgres()) {
+	// 			return 'character varying (' . $ln . ')';
+	// 		} else {
+	// 			return 'varchar(' . $ln . ')';
+	// 		}
+	// 	}
 
-	/**
-	 * Возвращает SQL "CREATE TABLE ..." для отражения сущности в БД
-	 *
-	 * @param $name string - Название таблицы
-	 * @param $columnsSQL string - Колонки
-	 * @return string
-	 */
-	private function tableSQL($name, $columnsSQL)
-	{
-		// Adapter::DEFAULT_CHARSET
-		if ($this->isPostgres()) {
-			return "CREATE TABLE \"$name\" (\r\n$columnsSQL\r\n);";
-		}
+	// 	return $type;
+	// }
 
-		return "CREATE TABLE `$name` (\r\n$columnsSQL\r\n) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
-	}
+	// /**
+	//  * Возвращает SQL "CREATE TABLE ..." для отражения сущности в БД
+	//  *
+	//  * @param $name string - Название таблицы
+	//  * @param $columnsSQL string - Колонки
+	//  * @return string
+	//  */
+	// private function tableSQL($name, $columnsSQL)
+	// {
+	// 	// Adapter::DEFAULT_CHARSET
+	// 	if ($this->isPostgres()) {
+	// 		return "CREATE TABLE \"$name\" (\r\n$columnsSQL\r\n);";
+	// 	}
 
-	/**
-	 * @param $name
-	 * @return string
-	 */
-	private function dropColumnSql($name)
-	{
-		$table = $this->getTableName();
+	// 	return "CREATE TABLE `$name` (\r\n$columnsSQL\r\n) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+	// }
 
-		if ($this->isPostgres()) {
-			return "ALTER TABLE \"{$table}\" DROP COLUMN \"{$name}\"";
-		} else {
-			//return 'ALTER TABLE `' . $this->getTableName() . '` DROP COLUMN ' . $name;
-			return "ALTER TABLE `{$table}` DROP COLUMN `{$name}`";
-		}
-	}
+	// /**
+	//  * @param $name
+	//  * @return string
+	//  */
+	// private function dropColumnSql($name)
+	// {
+	// 	$table = $this->getTableName();
 
-	/**
-	 * Добавление колонки в таблицу
-	 * 
-	 * @param $name
-	 * @param $type
-	 * @return string
-	 */
-	private function addColumnSql($name, $type)
-	{
-		$table = $this->getTableName();
+	// 	if ($this->isPostgres()) {
+	// 		return "ALTER TABLE \"{$table}\" DROP COLUMN \"{$name}\"";
+	// 	} else {
+	// 		//return 'ALTER TABLE `' . $this->getTableName() . '` DROP COLUMN ' . $name;
+	// 		return "ALTER TABLE `{$table}` DROP COLUMN `{$name}`";
+	// 	}
+	// }
 
-		if ($this->isPostgres()) {
-			return 'ALTER TABLE "' . $table . '" ADD "' . $name . '" ' . $type;
-		}
-		else {
-			return 'ALTER TABLE `' . $table . '` ADD ' . $name . ' ' . $type;
-		}
-	}
+	// /**
+	//  * Добавление колонки в таблицу
+	//  * 
+	//  * @param $name
+	//  * @param $type
+	//  * @return string
+	//  */
+	// private function addColumnSql($name, $type)
+	// {
+	// 	$table = $this->getTableName();
 
-	/**
-	 * Изменение типа колонки (не учитывает изменение значения по умолчанию)
-	 * 
-	 * 
-	 * @param $name
-	 * @param $type
-	 * @return string
-	 */
-	private function modifyColumnSql($name, $type)
-	{
-		$table = $this->getTableName();
+	// 	if ($this->isPostgres()) {
+	// 		return 'ALTER TABLE "' . $table . '" ADD "' . $name . '" ' . $type;
+	// 	}
+	// 	else {
+	// 		return 'ALTER TABLE `' . $table . '` ADD ' . $name . ' ' . $type;
+	// 	}
+	// }
 
-		if ($this->isPostgres()) {
-			if ($type === "uuid") {
-				return "ALTER TABLE \"{$table}\" ALTER COLUMN \"{$name}\" TYPE {$type} USING uuid::uuid;";
-			} else {
-				return "ALTER TABLE \"{$table}\" ALTER COLUMN \"{$name}\" TYPE {$type};";
-			}
-		} else {
-			// uuid - аналог!!!!!!
-			return "ALTER TABLE `{$table}` MODIFY {$name} {$type}";
-		}
-	}
+	// /**
+	//  * Изменение типа колонки (не учитывает изменение значения по умолчанию)
+	//  * 
+	//  * 
+	//  * @param $name
+	//  * @param $type
+	//  * @return string
+	//  */
+	// private function modifyColumnSql($name, $type)
+	// {
+	// 	$table = $this->getTableName();
+
+	// 	if ($this->isPostgres()) {
+	// 		if ($type === "uuid") {
+	// 			return "ALTER TABLE \"{$table}\" ALTER COLUMN \"{$name}\" TYPE {$type} USING uuid::uuid";
+	// 		} else {
+	// 			return "ALTER TABLE \"{$table}\" ALTER COLUMN \"{$name}\" TYPE {$type}";
+	// 		}
+	// 	} else {
+	// 		// uuid - аналог!!!!!!
+	// 		return "ALTER TABLE `{$table}` MODIFY {$name} {$type}";
+	// 	}
+	// }
 
 	/**
 	 * Возвращает имя класса сущности
@@ -570,6 +651,9 @@ class Entity extends ORM
 	 */
 	private $saved = false;
 
+	/**
+	 * 
+	 */
 	public function saveQueryString()
 	{
 		$names  = array();

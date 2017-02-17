@@ -103,11 +103,13 @@ class Adapter
 	public function query($sql, array $input_parameters = array())
 	{
 		$request = $this->pdo->prepare($sql);
-		$request->execute($input_parameters);
-		// var_dump($sql);
-		// var_dump($this->pdo->errorCode()); 
-		// var_dump($this->pdo->errorInfo()); 
-
+		$this->pdo->setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_WARNING );
+		$res = $request->execute($input_parameters);
+		if (!$res) {
+			// var_dump($this->pdo->errorInfo());
+			// var_dump($this->pdo->errorCode());
+			// var_dump($request);
+		}
 		return $request;
 	}
 
