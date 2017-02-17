@@ -2,6 +2,9 @@
 
 // PostgresTable.php
 
+// sudo -u postgres psql
+// \connect office
+// \d+ tablename - структура таблицы
 
 namespace Nirvana\ORM;
 
@@ -151,14 +154,8 @@ class PostgresTable extends Table
 		if (!$result) return;
 
 		while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
-			// var_dump(array(
-			// 		$row['column_name'],
-			// 		$row['is_nullable'],
-			// 		$row['data_type'],
-			// 	))
 			$columns[$row['column_name']] = $row;
 		}
-
 		return $columns;
 	}
 
