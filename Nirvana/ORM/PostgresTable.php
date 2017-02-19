@@ -22,49 +22,11 @@ class PostgresTable extends Table
 	}
 
 	/**
-	 * Установка
+	 * 
 	 */
-	public function install()
+	protected function escapeString($string)
 	{
-		$columnsSQL = array();
-
-		// Комментарии свойств
-		foreach ($this->properties->getProperties() as $property) {
-			$parameters = $this->columnOptions($this->getPropertyComment($property));
-			
-			if (isset($parameters['Column'])) {
-				$columnsSQL[] = $this->columnSQL($property->name, $parameters);
-			}
-		}
-
-		$columnsSQL = implode(",\r\n", $columnsSQL);
-		$tableSql = "CREATE TABLE \"$this->table_name\" (\r\n$columnsSQL\r\n);";
-		print($tableSql);
-		$this->query($tableSql);
-	}
-
-	/**
-	 * Обновление
-	 */
-	public function update()
-	{
-		// Если таблица еще не установлена
-		if (!$this->getColumnsByTable()) {
-			$this->install();
-		}
-
-		// Модификация таблицы
-		$this->modifyTable();
-
-		// 	$alters = array_merge($alters, $this->getAlterIndex($columnsT, $columnsM));
-	}
-
-	/**
-	 * Удаление
-	 */
-	public function delete()
-	{
-		$this->query("DROP TABLE \"{$this->table_name}\";");
+		return '"'.$string.'"';
 	}
 
 	// --------------------------------------------------

@@ -20,19 +20,50 @@ abstract class Table extends ORM
 		//var_dump($this->properties);
 	}
 
+	/**
+	 * Установка
+	 */
 	public function install()
 	{
-		//...
+		$columnsSQL = array();
+
+		// Комментарии свойств
+		foreach ($this->properties->getProperties() as $property) {
+			$parameters = $this->columnOptions($this->getPropertyComment($property));
+			
+			if (isset($parameters['Column'])) {
+				$columnsSQL[] = $this->columnSQL($property->name, $parameters);
+			}
+		}
+
+		$columnsSQL = implode(",\r\n", $columnsSQL);
+		$tableSql = "CREATE TABLE {$this->escapeString($this->table_name)} (\r\n$columnsSQL\r\n);";
+		print($tableSql);
+		$this->query($tableSql);
 	}
 
+	/**
+	 * Обновление
+	 */
 	public function update()
 	{
-		//...
+		// Если таблица еще не установлена
+		if (!$this->getColumnsByTable()) {
+			$this->install();
+		}
+
+		// Модификация таблицы
+		$this->modifyTable();
+
+		// 	$alters = array_merge($alters, $this->getAlterIndex($columnsT, $columnsM));
 	}
 
+	/**
+	 * Удаление
+	 */
 	public function delete()
 	{
-		//...
+		$this->query("DROP TABLE {$this->escapeString($this->table_name)};");
 	}
 
 	/**
@@ -112,4 +143,5 @@ abstract class Table extends ORM
 	}
 
 	abstract protected function isNullableByTable($column);
+	abstract protected function escapeString($string);
 }
