@@ -37,7 +37,7 @@ class PostgresTable extends Table
 	 * @param $parameters
 	 * @return string
 	 */
-	private function columnSQL($name, $parameters)
+	public function columnSQL($name, $parameters)
 	{
 		$type = $this->getTypeColumn($parameters);
 		$default = $this->getDefaultByModel($parameters);
@@ -108,7 +108,7 @@ class PostgresTable extends Table
 	 *
 	 * @return array
 	 */
-	private function getColumnsByTable()
+	public function getColumnsByTable()
 	{
 		$columns = array();
 		$result  = $this->query("SELECT * FROM information_schema.columns WHERE table_name ='{$this->table_name}';");
@@ -124,7 +124,7 @@ class PostgresTable extends Table
 	/**
 	 * ....
 	 */
-	private function modifyTable()
+	public function modifyTable()
 	{
 		$alters = array();
 		$columnsT = $this->getColumnsByTable();
