@@ -12,6 +12,7 @@
 namespace Nirvana\ORM;
 
 use \Nirvana\MVC as MVC;
+use \Nirvana\MVC\Application as App;
 
 
 class Repository extends ORM
@@ -130,8 +131,12 @@ class Repository extends ORM
 		}
 
 		$where  = implode(' '.$glue.' ', $values);
-		//$result = $this->query($type . ' FROM `'.$table.'` WHERE '.$where.';', $params);
-		$result = $this->query($type . ' FROM '.$table.' WHERE '.$where.';', $params);
+		if ($this->isPostgres()) {
+			$result = $this->query($type . ' FROM "'.$table.'" WHERE '.$where.';', $params);
+		}
+		else {
+			$result = $this->query($type . ' FROM '.$table.' WHERE '.$where.';', $params);
+		}
 
 		return $result;
 	}
@@ -192,5 +197,14 @@ class Repository extends ORM
 		}
 
 		return $resArr;
+	}
+
+	/**
+	 * Пока так. Позже нужно будет разделить MySQL и Postgres по отдельным классам
+	 */
+	private function isPostgres()
+	{
+		$DB = App::getConfigSection('DB');
+		return (isset($DB['TYPE']) && $DB['TYPE'] === 'postgres');
 	}
 }

@@ -120,7 +120,7 @@ class MysqlTable extends Table
 	{
 		$alters = array();
 		$columnsT = $this->getColumnsByTable();
-		$columnsM = $this->getColumnsByModel();
+		$columnsM = $this->getColumnsByModel($this->class_name);
 
 		// Удаление колонок которых нет в модели но есть в БД
 		foreach ($columnsT as $name => $properties) if (!isset($columnsM[$name]) || is_null($columnsM[$name])) {
@@ -240,7 +240,7 @@ class MysqlTable extends Table
 	 */
 	private function addColumnSql($column_name, $type)
 	{
-		$columns = $this->getColumnsByModel();
+		$columns = $this->getColumnsByModel($this->class_name);
 		$default = $this->getDefaultByModel($columns[$column_name]);
 
 		// if (strpos($type, 'character varying') !== false && $default !== 'NULL') {

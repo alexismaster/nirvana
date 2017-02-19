@@ -72,27 +72,6 @@ class Entity extends ORM
 	}
 
 	/**
-	 * Возвращает параметры для колонок таблицы основвываясь на модели
-	 *
-	 * @return array
-	 */
-	private function getColumnsByModel()
-	{
-		$result = array();
-		$rc = new \ReflectionClass($this->getClass());
-
-		// Комментарии свойств
-		foreach ($rc->getProperties() as $property) {
-			$rp = new \ReflectionProperty($property->class, $property->name);
-			$options = $this->columnOptions($rp->getDocComment());
-			if (!isset($options['Column'])) continue;
-			$result[$property->name] = $options; // Парсинг комментариев над свойствами
-		}
-
-		return $result;
-	}
-
-	/**
 	 * Возвращает имя класса сущности
 	 *
 	 * @return string
@@ -183,7 +162,7 @@ class Entity extends ORM
 		$names  = array();
 		$values = array();
 
-		foreach ($this->getColumnsByModel() as $name => $options) {
+		foreach ($this->getColumnsByModel($this->getClass()) as $name => $options) {
 			if (isset($options['GeneratedValue']) && $options['GeneratedValue']['strategy'] === 'AUTO') {
 				continue;
 			}
@@ -201,12 +180,15 @@ class Entity extends ORM
 			}
 		}
 
-		//var_dump($values);
 		$table  = $this->getTableName();
 		$names  = implode(', ', $names);
 		$values = implode(', ', $values);
 		
-		return "INSERT INTO {$table} ($names) VALUES ($values)";
+		if ($this->isPostgres()) {
+			return "INSERT INTO \"{$table}\" ($names) VALUES ($values);";
+		} else {
+			return "INSERT INTO {$table} ($names) VALUES ($values)";
+		}
 	}
 
 	/**
@@ -234,7 +216,7 @@ class Entity extends ORM
 		$table = $this->getTableName();
 		$values = array();
 
-		foreach ($this->getColumnsByModel() as $name => $options) {
+		foreach ($this->getColumnsByModel($this->getClass()) as $name => $options) {
 			if (isset($options['GeneratedValue']) && $options['GeneratedValue']['strategy'] === 'AUTO') continue;
 
 			if ($options['Column']['type'] !== 'string' && $options['Column']['type'] !== 'text' && $options['Column']['type'] !== 'datetime') {

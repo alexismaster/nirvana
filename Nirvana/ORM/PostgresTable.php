@@ -42,6 +42,10 @@ class PostgresTable extends Table
 		$type = $this->getTypeColumn($parameters);
 		$default = $this->getDefaultByModel($parameters);
 
+		if (isset($parameters['GeneratedValue'])) {
+			return "\t\"$name\" $type";
+		}
+
 		if (strpos($type, 'character varying') !== false && $default !== 'NULL') {
 			$default = "'{$default}'";
 		}
@@ -65,6 +69,11 @@ class PostgresTable extends Table
 	private function getTypeColumn($properties)
 	{
 		$type = $properties['Column']['type'];
+
+		//var_dump($properties['GeneratedValue']);
+		if (isset($properties['GeneratedValue'])) {
+			return 'SERIAL PRIMARY KEY';
+		}
 		
 		// дата и время (без часового пояса)
 		if ($type === 'timestamp') {
@@ -128,7 +137,7 @@ class PostgresTable extends Table
 	{
 		$alters = array();
 		$columnsT = $this->getColumnsByTable();
-		$columnsM = $this->getColumnsByModel();
+		$columnsM = $this->getColumnsByModel($this->class_name);
 
 		// Удаление колонок которых нет в модели но есть в БД
 		foreach ($columnsT as $name => $properties) if (!isset($columnsM[$name]) || is_null($columnsM[$name])) {
@@ -142,6 +151,12 @@ class PostgresTable extends Table
 
 		// Колонки которые есть в модели и в БД
 		foreach ($columnsM as $name => $properties) if (isset($columnsT[$name]) && !is_null($columnsT[$name])) {
+
+			// Пропускаем первичные ключи
+			// позже нужно будет добавить эту логику, но пока они будут создаваться только
+			// при первоначальной установке таблицы
+			if (isset($properties['GeneratedValue'])) continue;
+
 			$typeM = $this->getTypeColumn($properties);
 			$typeT = $columnsT[$name]['data_type'];
 			if (isset($columnsT[$name]['character_maximum_length'])) {
@@ -217,7 +232,7 @@ class PostgresTable extends Table
 	}
 
 	/**
-	 * 
+	 * Значение по умолчанию
 	 * 
 	 */
 	private function getDefaultByTable($column)
@@ -248,7 +263,7 @@ class PostgresTable extends Table
 	 */
 	private function addColumnSql($column_name, $type)
 	{
-		$columns = $this->getColumnsByModel();
+		$columns = $this->getColumnsByModel($this->class_name);
 		$default = $this->getDefaultByModel($columns[$column_name]);
 
 		if (strpos($type, 'character varying') !== false && $default !== 'NULL') {

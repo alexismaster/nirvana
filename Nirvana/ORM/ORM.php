@@ -12,7 +12,7 @@ namespace Nirvana\ORM;
 use Nirvana\MVC as MVC;
 
 
-class ORM
+class ORM extends Reflection
 {
 	/**
 	 * Преобразует camelCase строку в underscore
@@ -82,4 +82,5 @@ class ORM
 			throw new \Exception('Не удалось обновить таблицу ' . $className . '. Причина: ' . $error->getMessage());
 		}
 	}
+
 }
