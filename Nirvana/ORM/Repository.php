@@ -87,25 +87,31 @@ class Repository extends ORM
 		}
 	}
 
-    /**
-     * @return array|\PDOStatement
-     */
-    public function findAll()
-    {
-        $table = $this->camelCase2underscore($this->entityClassName);
+	/**
+	 * Выборка всех записей
+	 * 
+	 * @return array|\PDOStatement
+	 */
+	public function findAll()
+	{
+		$table = $this->camelCase2underscore($this->entityClassName);
 
-        if ($this->moduleName) {
-            $table = $this->camelCase2underscore($this->moduleName . $this->entityClassName);
-        }
+		if ($this->moduleName) {
+			$table = $this->camelCase2underscore($this->moduleName . $this->entityClassName);
+		}
 
-        $result = $this->query('SELECT * FROM ' . $table);
+		if ($this->isPostgres()) {
+			$result = $this->query('SELECT * FROM "' . $table . '"');
+		} else {
+			$result = $this->query('SELECT * FROM ' . $table);
+		}
 
-        if ($result && $result->rowCount()) {
-            return $this->mapResult($result);
-        }
+		if ($result && $result->rowCount()) {
+			return $this->mapResult($result);
+		}
 
-        return ($result) ? array() : $result;
-    }
+		return ($result) ? array() : $result;
+	}
 
 	/**
 	 * Конструирует запрос
@@ -133,8 +139,7 @@ class Repository extends ORM
 		$where  = implode(' '.$glue.' ', $values);
 		if ($this->isPostgres()) {
 			$result = $this->query($type . ' FROM "'.$table.'" WHERE '.$where.';', $params);
-		}
-		else {
+		} else {
 			$result = $this->query($type . ' FROM '.$table.' WHERE '.$where.';', $params);
 		}
 
